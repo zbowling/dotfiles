@@ -35,6 +35,7 @@ install_dev_macos() {
         sccache
         pkg-config
         openssl
+        jq
     )
 
     for pkg in "${packages[@]}"; do
@@ -61,6 +62,7 @@ install_dev_debian() {
         bison
         libncurses-dev
         bc
+        jq
     )
 
     for pkg in "${packages[@]}"; do
@@ -94,6 +96,7 @@ install_dev_arch() {
         bison
         ncurses
         bc
+        jq
     )
 
     for pkg in "${packages[@]}"; do

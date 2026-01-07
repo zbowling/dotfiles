@@ -98,6 +98,7 @@ See [CHEZMOI.md](CHEZMOI.md) for full documentation.
 | llvm | Compiler infrastructure |
 | pkg-config | Library helper |
 | ccache/sccache | Compiler cache |
+| jq | JSON processor for CLI |
 
 ### Runtimes (`--runtimes`)
 

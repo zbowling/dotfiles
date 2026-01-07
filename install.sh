@@ -71,6 +71,32 @@ echo "Installing Zellij config..."
 backup_dir_if_exists ~/.config/zellij
 ln -sf "$DOTFILES_DIR/zellij" ~/.config/zellij
 
+# Install Claude Code config (merge attribution settings safely)
+echo "Installing Claude Code config..."
+mkdir -p ~/.claude
+if command -v jq &> /dev/null; then
+    # Use jq to safely merge attribution settings into existing config
+    if [[ -f ~/.claude/settings.json ]]; then
+        # Merge our attribution settings into existing file
+        jq -s '.[0] * .[1]' ~/.claude/settings.json "$DOTFILES_DIR/claude/settings.json" > ~/.claude/settings.json.tmp
+        mv ~/.claude/settings.json.tmp ~/.claude/settings.json
+        echo "  Merged attribution settings into existing ~/.claude/settings.json"
+    else
+        # No existing file, just copy ours
+        cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
+        echo "  Created ~/.claude/settings.json"
+    fi
+else
+    # jq not available
+    if [[ ! -f ~/.claude/settings.json ]]; then
+        cp "$DOTFILES_DIR/claude/settings.json" ~/.claude/settings.json
+        echo "  Created ~/.claude/settings.json"
+    else
+        echo "  Warning: jq not installed, cannot safely merge Claude settings"
+        echo "  Install jq (--dev) and re-run, or manually merge $DOTFILES_DIR/claude/settings.json"
+    fi
+fi
+
 # Add Starship and icon-free aliases to bash (append if not already present)
 echo "Patching bash config..."
 if ! grep -q "starship init bash" ~/.bashrc 2>/dev/null; then
