@@ -11,9 +11,10 @@ severity=warning
 # SC1090: Can't follow non-constant source
 # SC1091: Not following sourced file (not found)
 # SC2034: Variable appears unused (often used in sourced files)
+# SC2088: Tilde in quotes (intentional in display strings)
 # SC2154: Variable referenced but not assigned (assigned in sourced files)
 # SC2164: cd without || exit (we use cd in controlled temp dir contexts)
-disable=SC1090,SC1091,SC2154,SC2164
+disable=SC1090,SC1091,SC2034,SC2088,SC2154,SC2164
 
 # Enable optional checks (but not require-variable-braces which is noisy)
 enable=add-default-case

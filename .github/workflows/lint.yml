@@ -44,11 +44,11 @@ jobs:
           echo "$all_scripts" | sed 's/^/  /'
           echo ""
 
-          # Run shellcheck
+          # Run shellcheck (severity=warning to match .shellcheckrc)
           failed=0
           for script in $all_scripts; do
             echo "Checking: $script"
-            if ! shellcheck -x "$script"; then
+            if ! shellcheck -x -S warning "$script"; then
               failed=1
             fi
           done
