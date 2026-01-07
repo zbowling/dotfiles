@@ -214,27 +214,17 @@ install_codex() {
     if is_macos; then
         brew install --cask codex
     else
-        # Download binary for Linux
-        echo "Downloading Codex binary..."
-        local arch
-        arch=$(uname -m)
-        local url
-
-        if [[ "$arch" == "x86_64" ]]; then
-            url="https://github.com/openai/codex/releases/latest/download/codex-x86_64-unknown-linux-musl.tar.gz"
-        elif [[ "$arch" == "aarch64" ]]; then
-            url="https://github.com/openai/codex/releases/latest/download/codex-aarch64-unknown-linux-musl.tar.gz"
+        # Install via bun/npm
+        if command -v bun &> /dev/null; then
+            echo "Installing Codex via bun..."
+            bun install --global @openai/codex
+        elif command -v npm &> /dev/null; then
+            echo "Installing Codex via npm..."
+            npm install -g @openai/codex
         else
-            echo "Unsupported architecture: $arch"
-            return
+            echo "Bun or npm required for Codex. Install with --dev or --runtimes first."
+            return 1
         fi
-
-        cd /tmp
-        curl -fsSL "$url" -o codex.tar.gz
-        tar -xzf codex.tar.gz
-        sudo install -m 755 codex /usr/local/bin/codex
-        rm -f codex.tar.gz codex
-        cd - > /dev/null
     fi
 
     echo "Codex installed! Run 'codex' to start."
