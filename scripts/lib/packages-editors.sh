@@ -170,8 +170,19 @@ install_gemini_cli() {
     echo "=== Installing Gemini CLI ==="
     echo ""
 
+    # Check if already installed and handle dry-run
     if command -v gemini &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Gemini CLI (already installed)"
+            return
+        fi
         echo "Gemini CLI already installed"
+        return
+    fi
+
+    # In dry-run, report what would be done
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Gemini CLI"
         return
     fi
 
@@ -206,8 +217,19 @@ install_codex() {
     echo "=== Installing OpenAI Codex ==="
     echo ""
 
+    # Check if already installed and handle dry-run
     if command -v codex &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Codex (already installed)"
+            return
+        fi
         echo "Codex already installed"
+        return
+    fi
+
+    # In dry-run, report what would be done
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Codex"
         return
     fi
 
@@ -238,8 +260,19 @@ install_claude_code() {
     echo "=== Installing Claude Code ==="
     echo ""
 
+    # Check if already installed and handle dry-run
     if command -v claude &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Claude Code (already installed)"
+            return
+        fi
         echo "Claude Code already installed: $(claude --version 2>/dev/null || echo 'version unknown')"
+        return
+    fi
+
+    # In dry-run, report what would be done
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Claude Code"
         return
     fi
 

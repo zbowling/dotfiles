@@ -22,6 +22,26 @@ source "$SCRIPT_DIR/lib/packages-editors.sh"
 source "$SCRIPT_DIR/lib/git-config.sh"
 source "$SCRIPT_DIR/lib/macos-defaults.sh"
 
+# Dry-run helper function
+# Usage: dry_run_check "package-name" "command" || return
+# Returns 0 (continue) if package not installed or not in dry-run mode
+# Returns 1 (skip) if in dry-run and package already installed
+dry_run_check() {
+    local name="$1"
+    local check_cmd="$2"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        if eval "$check_cmd" &> /dev/null; then
+            echo "[SKIP] $name (already installed)"
+            return 1
+        else
+            echo "[WOULD INSTALL] $name"
+            return 1
+        fi
+    fi
+    return 0
+}
+
 # Parse flags
 INSTALL_CLI=false
 INSTALL_DEV=false
@@ -33,6 +53,7 @@ INSTALL_1PASSWORD=false
 INIT_GIT=false
 MACOS_DEFAULTS=false
 SHOW_HELP=false
+DRY_RUN=false
 
 # Individual app flags
 INSTALL_CHROME=false
@@ -157,6 +178,9 @@ for arg in "$@"; do
             INSTALL_RUNTIMES=true
             INSTALL_APPS=true
             ;;
+        --dry-run)
+            DRY_RUN=true
+            ;;
         --help|-h)
             SHOW_HELP=true
             ;;
@@ -213,6 +237,9 @@ if [[ "$SHOW_HELP" == true ]]; then
     echo "  --tailscale   Tailscale VPN"
     echo "  --fonts       Nerd Fonts (CascadiaMono, JetBrains Mono)"
     echo ""
+    echo "Other options:"
+    echo "  --dry-run     Show what would be installed without installing"
+    echo ""
     echo "Examples:"
     echo "  $0 --all                  # Install cli, dev, runtimes, apps"
     echo "  $0 --extra                # Install everything including dev editors"
@@ -242,6 +269,17 @@ if [[ "$INSTALL_EXTRA" == true ]]; then
     INSTALL_FONTS=true
     INSTALL_OLLAMA=true
     MACOS_DEFAULTS=true
+fi
+
+# Export DRY_RUN for child functions to check
+export DRY_RUN
+
+# Handle dry-run mode - show header
+if [[ "$DRY_RUN" == true ]]; then
+    echo "========================================"
+    echo "DRY RUN - Checking what would be done"
+    echo "========================================"
+    echo ""
 fi
 
 # Request sudo upfront if we'll need it (Linux package installation)
