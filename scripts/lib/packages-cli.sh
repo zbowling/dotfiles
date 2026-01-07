@@ -154,6 +154,14 @@ install_1password() {
     echo "=== Installing 1Password ==="
     echo ""
 
+    # Check if already fully installed
+    if command -v op &> /dev/null && (command -v 1password &> /dev/null || [[ -d "/Applications/1Password.app" ]]); then
+        echo "1Password already installed"
+        echo "1Password CLI: $(op --version)"
+        configure_1password_ssh_git
+        return
+    fi
+
     if is_macos; then
         install_1password_macos
     elif is_debian; then
@@ -235,13 +243,19 @@ install_1password_macos() {
 }
 
 install_1password_debian() {
+    # Check if already fully installed
+    if command -v op &> /dev/null && command -v 1password &> /dev/null; then
+        echo "1Password already installed"
+        return
+    fi
+
     # Add 1Password apt repository if not present
     if [[ ! -f /etc/apt/sources.list.d/1password.list ]]; then
         echo "Adding 1Password apt repository..."
 
-        # Add signing key
+        # Add signing key (use --yes to overwrite if exists)
         curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
-            sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+            sudo gpg --dearmor --yes --output /usr/share/keyrings/1password-archive-keyring.gpg
 
         # Add repository
         echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" | \
@@ -253,7 +267,7 @@ install_1password_debian() {
             sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol
         sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22
         curl -sS https://downloads.1password.com/linux/keys/1password.asc | \
-            sudo gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+            sudo gpg --dearmor --yes --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
 
         sudo apt update
     fi
@@ -276,7 +290,13 @@ install_1password_debian() {
 }
 
 install_1password_arch() {
-    # Import signing key
+    # Check if already fully installed
+    if command -v op &> /dev/null && command -v 1password &> /dev/null; then
+        echo "1Password already installed"
+        return
+    fi
+
+    # Import signing key (suppress output if already imported)
     echo "Importing 1Password GPG key..."
     curl -sS https://downloads.1password.com/linux/keys/1password.asc | gpg --import 2>/dev/null || true
 
