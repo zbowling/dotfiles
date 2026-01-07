@@ -256,6 +256,56 @@ jobs:
           git config --global --get pull.ff && echo "  pull.ff set"
           git config --global --get rebase.autosquash && echo "  rebase.autosquash set"
 
+      - name: Validate Editor Functions
+        run: |
+          echo "=== Validating Editor Installation Functions ==="
+          # Source the editor functions and check they're defined
+          source scripts/lib/detect-os.sh
+          source scripts/lib/packages-editors.sh
+
+          check_function() {
+            if declare -f "$1" > /dev/null; then
+              echo "✓ $1 function defined"
+              return 0
+            else
+              echo "✗ $1 function not found"
+              return 1
+            fi
+          }
+
+          failed=0
+          check_function install_vscode || failed=1
+          check_function install_cursor || failed=1
+          check_function install_zed || failed=1
+          check_function install_antigravity || failed=1
+          check_function install_gemini_cli || failed=1
+          check_function install_codex || failed=1
+          check_function install_claude_code || failed=1
+          check_function install_neovim_lazyvim || failed=1
+
+          if [[ $failed -eq 1 ]]; then
+            echo ""
+            echo "Some editor functions are missing!"
+            exit 1
+          fi
+
+          echo ""
+          echo "All editor functions validated!"
+
+      - name: Test Editor Installations (Codex)
+        run: |
+          echo "=== Testing Editor Installation ==="
+          # Test one npm-based editor install
+          ./scripts/install-packages.sh --codex
+
+          # Verify it installed
+          if command -v codex &> /dev/null; then
+            echo "✓ codex installed: $(command -v codex)"
+          else
+            echo "✗ codex installation failed"
+            exit 1
+          fi
+
       - name: Summary
         run: |
           echo ""
@@ -268,6 +318,7 @@ jobs:
           echo "  ✓ CLI tools installation"
           echo "  ✓ Dev tools installation"
           echo "  ✓ Runtimes installation"
+          echo "  ✓ Editor installation (codex)"
           echo "  ✓ Zsh config syntax"
           echo "  ✓ Fish config syntax"
           echo "  ✓ Git configuration"

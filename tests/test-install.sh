@@ -218,6 +218,39 @@ fi
 echo ""
 
 # ==========================================
+# Test 7: Validate editor installation functions
+# ==========================================
+echo "--- Test: Editor functions validation ---"
+log_info "Validating editor installation functions..."
+
+# Source required files
+source "$DOTFILES_DIR/scripts/lib/detect-os.sh"
+source "$DOTFILES_DIR/scripts/lib/packages-editors.sh"
+
+# Check each function exists
+check_editor_function() {
+    local func_name="$1"
+    if declare -f "$func_name" > /dev/null 2>&1; then
+        log_pass "$func_name defined"
+        return 0
+    else
+        log_fail "$func_name defined"
+        return 1
+    fi
+}
+
+check_editor_function install_vscode
+check_editor_function install_cursor
+check_editor_function install_zed
+check_editor_function install_antigravity
+check_editor_function install_gemini_cli
+check_editor_function install_codex
+check_editor_function install_claude_code
+check_editor_function install_neovim_lazyvim
+
+echo ""
+
+# ==========================================
 # Summary
 # ==========================================
 echo "=========================================="
