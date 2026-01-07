@@ -280,7 +280,7 @@ install_neovim_lazyvim() {
         elif is_debian; then
             # Get latest Neovim from GitHub releases for newer version
             local nvim_version
-            nvim_version=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | grep -Po '"tag_name": "\K[^"]*')
+            nvim_version=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | sed -n 's/.*"tag_name": "\([^"]*\)".*/\1/p' | head -1)
             cd /tmp
             curl -fsSL "https://github.com/neovim/neovim/releases/download/${nvim_version}/nvim-linux-x86_64.tar.gz" -o nvim.tar.gz
             sudo tar -xzf nvim.tar.gz -C /opt
