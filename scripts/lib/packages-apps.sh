@@ -10,35 +10,47 @@ install_chrome() {
     echo "=== Installing Google Chrome ==="
     echo ""
 
+    # Check if already installed
+    local installed=false
+    if is_macos && [[ -d "/Applications/Google Chrome.app" ]]; then
+        installed=true
+    elif (is_debian || is_arch) && command -v google-chrome &> /dev/null; then
+        installed=true
+    elif is_arch && command -v google-chrome-stable &> /dev/null; then
+        installed=true
+    fi
+
+    if [[ "$installed" == true ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Chrome (already installed)"
+            return
+        fi
+        echo "Google Chrome already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Chrome"
+        return
+    fi
+
     if is_macos; then
-        if ! [[ -d "/Applications/Google Chrome.app" ]]; then
-            brew install --cask google-chrome
-        else
-            echo "Google Chrome already installed"
-        fi
+        brew install --cask google-chrome
     elif is_debian; then
-        if ! command -v google-chrome &> /dev/null; then
-            echo "Downloading Google Chrome..."
-            (
-                cd /tmp || exit 1
-                wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O chrome.deb
-                sudo apt install -y ./chrome.deb
-                rm chrome.deb
-            )
-        else
-            echo "Google Chrome already installed"
-        fi
+        echo "Downloading Google Chrome..."
+        (
+            cd /tmp || exit 1
+            wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O chrome.deb
+            sudo apt install -y ./chrome.deb
+            rm chrome.deb
+        )
     elif is_arch; then
-        if ! command -v google-chrome-stable &> /dev/null; then
-            if [[ "$PKG_MANAGER" == "paru" ]]; then
-                paru -S --noconfirm --needed google-chrome
-            elif [[ "$PKG_MANAGER" == "yay" ]]; then
-                yay -S --noconfirm --needed google-chrome
-            else
-                echo "Google Chrome requires an AUR helper (paru or yay)"
-            fi
+        if [[ "$PKG_MANAGER" == "paru" ]]; then
+            paru -S --noconfirm --needed google-chrome
+        elif [[ "$PKG_MANAGER" == "yay" ]]; then
+            yay -S --noconfirm --needed google-chrome
         else
-            echo "Google Chrome already installed"
+            echo "Google Chrome requires an AUR helper (paru or yay)"
         fi
     fi
 }
@@ -51,33 +63,36 @@ install_ghostty() {
     echo "=== Installing Ghostty ==="
     echo ""
 
-    if is_macos; then
-        if ! [[ -d "/Applications/Ghostty.app" ]]; then
-            brew install --cask ghostty
-        else
-            echo "Ghostty already installed"
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Ghostty.app" ]]) || command -v ghostty &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Ghostty (already installed)"
+            return
         fi
+        echo "Ghostty already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Ghostty"
+        return
+    fi
+
+    if is_macos; then
+        brew install --cask ghostty
     elif is_debian; then
-        if ! command -v ghostty &> /dev/null; then
-            # Ghostty on Ubuntu/Debian - try snap first, then build from source
-            if command -v snap &> /dev/null; then
-                echo "Installing Ghostty via snap..."
-                sudo snap install ghostty --classic
-            else
-                echo "Ghostty not available via apt. Options:"
-                echo "  1. Install snap and run: sudo snap install ghostty --classic"
-                echo "  2. Build from source: https://ghostty.org/docs/install/build"
-            fi
+        # Ghostty on Ubuntu/Debian - try snap first, then build from source
+        if command -v snap &> /dev/null; then
+            echo "Installing Ghostty via snap..."
+            sudo snap install ghostty --classic
         else
-            echo "Ghostty already installed"
+            echo "Ghostty not available via apt. Options:"
+            echo "  1. Install snap and run: sudo snap install ghostty --classic"
+            echo "  2. Build from source: https://ghostty.org/docs/install/build"
         fi
     elif is_arch; then
-        if ! command -v ghostty &> /dev/null; then
-            # Ghostty is in community repo on Arch
-            sudo pacman -S --noconfirm --needed ghostty
-        else
-            echo "Ghostty already installed"
-        fi
+        # Ghostty is in community repo on Arch
+        sudo pacman -S --noconfirm --needed ghostty
     fi
 }
 
@@ -89,24 +104,27 @@ install_alacritty() {
     echo "=== Installing Alacritty ==="
     echo ""
 
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Alacritty.app" ]]) || command -v alacritty &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Alacritty (already installed)"
+            return
+        fi
+        echo "Alacritty already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Alacritty"
+        return
+    fi
+
     if is_macos; then
-        if ! [[ -d "/Applications/Alacritty.app" ]]; then
-            brew install --cask alacritty
-        else
-            echo "Alacritty already installed"
-        fi
+        brew install --cask alacritty
     elif is_debian; then
-        if ! command -v alacritty &> /dev/null; then
-            sudo apt install -y alacritty
-        else
-            echo "Alacritty already installed"
-        fi
+        sudo apt install -y alacritty
     elif is_arch; then
-        if ! command -v alacritty &> /dev/null; then
-            sudo pacman -S --noconfirm --needed alacritty
-        else
-            echo "Alacritty already installed"
-        fi
+        sudo pacman -S --noconfirm --needed alacritty
     fi
 
     # Create config directory
@@ -121,12 +139,23 @@ install_discord() {
     echo "=== Installing Discord ==="
     echo ""
 
-    if is_macos; then
-        if ! [[ -d "/Applications/Discord.app" ]]; then
-            brew install --cask discord
-        else
-            echo "Discord already installed"
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Discord.app" ]]) || command -v discord &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Discord (already installed)"
+            return
         fi
+        echo "Discord already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Discord"
+        return
+    fi
+
+    if is_macos; then
+        brew install --cask discord
     elif is_debian; then
         if ! command -v discord &> /dev/null; then
             echo "Downloading Discord..."
@@ -158,7 +187,16 @@ install_ollama() {
     echo ""
 
     if command -v ollama &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Ollama (already installed)"
+            return
+        fi
         echo "Ollama already installed: $(ollama --version 2>/dev/null || echo 'version unknown')"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Ollama"
         return
     fi
 
@@ -183,7 +221,16 @@ install_tailscale() {
     echo ""
 
     if command -v tailscale &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Tailscale (already installed)"
+            return
+        fi
         echo "Tailscale already installed: $(tailscale version 2>/dev/null | head -1)"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Tailscale"
         return
     fi
 
@@ -207,35 +254,38 @@ install_zoom() {
     echo "=== Installing Zoom ==="
     echo ""
 
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/zoom.us.app" ]]) || command -v zoom &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Zoom (already installed)"
+            return
+        fi
+        echo "Zoom already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Zoom"
+        return
+    fi
+
     if is_macos; then
-        if ! [[ -d "/Applications/zoom.us.app" ]]; then
-            brew install --cask zoom
-        else
-            echo "Zoom already installed"
-        fi
+        brew install --cask zoom
     elif is_debian; then
-        if ! command -v zoom &> /dev/null; then
-            echo "Downloading Zoom..."
-            (
-                cd /tmp || exit 1
-                wget -q https://zoom.us/client/latest/zoom_amd64.deb -O zoom.deb
-                sudo apt install -y ./zoom.deb
-                rm zoom.deb
-            )
-        else
-            echo "Zoom already installed"
-        fi
+        echo "Downloading Zoom..."
+        (
+            cd /tmp || exit 1
+            wget -q https://zoom.us/client/latest/zoom_amd64.deb -O zoom.deb
+            sudo apt install -y ./zoom.deb
+            rm zoom.deb
+        )
     elif is_arch; then
-        if ! command -v zoom &> /dev/null; then
-            if [[ "$PKG_MANAGER" == "paru" ]]; then
-                paru -S --noconfirm --needed zoom
-            elif [[ "$PKG_MANAGER" == "yay" ]]; then
-                yay -S --noconfirm --needed zoom
-            else
-                echo "Zoom requires an AUR helper (paru or yay)"
-            fi
+        if [[ "$PKG_MANAGER" == "paru" ]]; then
+            paru -S --noconfirm --needed zoom
+        elif [[ "$PKG_MANAGER" == "yay" ]]; then
+            yay -S --noconfirm --needed zoom
         else
-            echo "Zoom already installed"
+            echo "Zoom requires an AUR helper (paru or yay)"
         fi
     fi
 }
@@ -248,41 +298,44 @@ install_steam() {
     echo "=== Installing Steam ==="
     echo ""
 
-    if is_macos; then
-        if ! [[ -d "/Applications/Steam.app" ]]; then
-            brew install --cask steam
-        else
-            echo "Steam already installed"
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Steam.app" ]]) || command -v steam &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Steam (already installed)"
+            return
         fi
-    elif is_debian; then
-        if ! command -v steam &> /dev/null; then
-            # Enable i386 architecture for Steam
-            sudo dpkg --add-architecture i386
-            sudo apt update
+        echo "Steam already installed"
+        return
+    fi
 
-            echo "Downloading Steam..."
-            (
-                cd /tmp || exit 1
-                wget -q https://cdn.akamai.steamstatic.com/client/installer/steam.deb -O steam.deb
-                sudo apt install -y ./steam.deb
-                rm steam.deb
-            )
-        else
-            echo "Steam already installed"
-        fi
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Steam"
+        return
+    fi
+
+    if is_macos; then
+        brew install --cask steam
+    elif is_debian; then
+        # Enable i386 architecture for Steam
+        sudo dpkg --add-architecture i386
+        sudo apt update
+
+        echo "Downloading Steam..."
+        (
+            cd /tmp || exit 1
+            wget -q https://cdn.akamai.steamstatic.com/client/installer/steam.deb -O steam.deb
+            sudo apt install -y ./steam.deb
+            rm steam.deb
+        )
     elif is_arch; then
-        if ! command -v steam &> /dev/null; then
-            # Enable multilib repository for Steam
-            if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
-                echo ""
-                echo "Enabling multilib repository..."
-                sudo sed -i '/\[multilib\]/,/Include/ s/^#//' /etc/pacman.conf
-                sudo pacman -Sy
-            fi
-            sudo pacman -S --noconfirm --needed steam
-        else
-            echo "Steam already installed"
+        # Enable multilib repository for Steam
+        if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
+            echo ""
+            echo "Enabling multilib repository..."
+            sudo sed -i '/\[multilib\]/,/Include/ s/^#//' /etc/pacman.conf
+            sudo pacman -Sy
         fi
+        sudo pacman -S --noconfirm --needed steam
     fi
 }
 
@@ -294,39 +347,42 @@ install_spotify() {
     echo "=== Installing Spotify ==="
     echo ""
 
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Spotify.app" ]]) || command -v spotify &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Spotify (already installed)"
+            return
+        fi
+        echo "Spotify already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Spotify"
+        return
+    fi
+
     if is_macos; then
-        if ! [[ -d "/Applications/Spotify.app" ]]; then
-            brew install --cask spotify
-        else
-            echo "Spotify already installed"
-        fi
+        brew install --cask spotify
     elif is_debian; then
-        if ! command -v spotify &> /dev/null; then
-            # Add Spotify apt repository
-            if [[ ! -f /etc/apt/sources.list.d/spotify.list ]]; then
-                echo "Adding Spotify apt repository..."
-                curl -sS https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | \
-                    sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
-                echo "deb [signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | \
-                    sudo tee /etc/apt/sources.list.d/spotify.list
-                sudo apt update
-            fi
-            sudo apt install -y spotify-client
-        else
-            echo "Spotify already installed"
+        # Add Spotify apt repository
+        if [[ ! -f /etc/apt/sources.list.d/spotify.list ]]; then
+            echo "Adding Spotify apt repository..."
+            curl -sS https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | \
+                sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
+            echo "deb [signed-by=/etc/apt/trusted.gpg.d/spotify.gpg] https://repository.spotify.com stable non-free" | \
+                sudo tee /etc/apt/sources.list.d/spotify.list
+            sudo apt update
         fi
+        sudo apt install -y spotify-client
     elif is_arch; then
-        if ! command -v spotify &> /dev/null; then
-            # Spotify is in AUR
-            if [[ "$PKG_MANAGER" == "paru" ]]; then
-                paru -S --noconfirm --needed spotify
-            elif [[ "$PKG_MANAGER" == "yay" ]]; then
-                yay -S --noconfirm --needed spotify
-            else
-                echo "Spotify requires an AUR helper (paru or yay)"
-            fi
+        # Spotify is in AUR
+        if [[ "$PKG_MANAGER" == "paru" ]]; then
+            paru -S --noconfirm --needed spotify
+        elif [[ "$PKG_MANAGER" == "yay" ]]; then
+            yay -S --noconfirm --needed spotify
         else
-            echo "Spotify already installed"
+            echo "Spotify requires an AUR helper (paru or yay)"
         fi
     fi
 }
@@ -339,35 +395,38 @@ install_signal() {
     echo "=== Installing Signal ==="
     echo ""
 
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Signal.app" ]]) || command -v signal-desktop &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Signal (already installed)"
+            return
+        fi
+        echo "Signal already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Signal"
+        return
+    fi
+
     if is_macos; then
-        if ! [[ -d "/Applications/Signal.app" ]]; then
-            brew install --cask signal
-        else
-            echo "Signal already installed"
-        fi
+        brew install --cask signal
     elif is_debian; then
-        if ! command -v signal-desktop &> /dev/null; then
-            # Add Signal apt repository
-            if [[ ! -f /etc/apt/sources.list.d/signal-desktop.sources ]]; then
-                echo "Adding Signal apt repository..."
-                wget -qO- https://updates.signal.org/desktop/apt/keys.asc | \
-                    gpg --dearmor | sudo tee /usr/share/keyrings/signal-desktop-keyring.gpg > /dev/null
-                wget -qO /tmp/signal-desktop.sources https://updates.signal.org/static/desktop/apt/signal-desktop.sources
-                sudo cp /tmp/signal-desktop.sources /etc/apt/sources.list.d/
-                rm /tmp/signal-desktop.sources
-                sudo apt update
-            fi
-            sudo apt install -y signal-desktop
-        else
-            echo "Signal already installed"
+        # Add Signal apt repository
+        if [[ ! -f /etc/apt/sources.list.d/signal-desktop.sources ]]; then
+            echo "Adding Signal apt repository..."
+            wget -qO- https://updates.signal.org/desktop/apt/keys.asc | \
+                gpg --dearmor | sudo tee /usr/share/keyrings/signal-desktop-keyring.gpg > /dev/null
+            wget -qO /tmp/signal-desktop.sources https://updates.signal.org/static/desktop/apt/signal-desktop.sources
+            sudo cp /tmp/signal-desktop.sources /etc/apt/sources.list.d/
+            rm /tmp/signal-desktop.sources
+            sudo apt update
         fi
+        sudo apt install -y signal-desktop
     elif is_arch; then
-        if ! command -v signal-desktop &> /dev/null; then
-            # Signal is in community repo on Arch
-            sudo pacman -S --noconfirm --needed signal-desktop
-        else
-            echo "Signal already installed"
-        fi
+        # Signal is in community repo on Arch
+        sudo pacman -S --noconfirm --needed signal-desktop
     fi
 }
 
@@ -379,12 +438,27 @@ install_docker() {
     echo "=== Installing Docker ==="
     echo ""
 
-    if is_macos; then
-        if ! [[ -d "/Applications/Docker.app" ]]; then
-            brew install --cask docker
-        else
-            echo "Docker Desktop already installed"
+    # Check if already installed
+    if (is_macos && [[ -d "/Applications/Docker.app" ]]) || command -v docker &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Docker (already installed)"
+            return
         fi
+        if is_macos; then
+            echo "Docker Desktop already installed"
+        else
+            echo "Docker already installed"
+        fi
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Docker"
+        return
+    fi
+
+    if is_macos; then
+        brew install --cask docker
         return
     fi
 
@@ -437,6 +511,11 @@ install_fonts() {
     echo ""
     echo "=== Installing Nerd Fonts ==="
     echo ""
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Nerd Fonts (CaskaydiaMono, JetBrainsMono)"
+        return
+    fi
 
     if is_macos; then
         echo "Installing fonts via Homebrew..."
