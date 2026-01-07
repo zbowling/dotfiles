@@ -102,3 +102,5 @@ zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
 # ----- Local Overrides -----
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
+. "$HOME/.atuin/bin/env"

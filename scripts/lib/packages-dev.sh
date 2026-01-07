@@ -32,7 +32,6 @@ install_dev_macos() {
         cmake
         llvm
         ccache
-        sccache
         pkg-config
         openssl
         jq
@@ -68,14 +67,6 @@ install_dev_debian() {
     for pkg in "${packages[@]}"; do
         pkg_install "$pkg"
     done
-
-    # sccache via cargo (if rust is installed)
-    if command -v cargo &> /dev/null; then
-        echo "Installing sccache via cargo..."
-        cargo install sccache
-    else
-        echo "Skipping sccache (install rust first with --runtimes)"
-    fi
 }
 
 install_dev_arch() {
@@ -88,7 +79,6 @@ install_dev_arch() {
         llvm
         lld
         ccache
-        sccache
         pkgconf
         openssl
         libelf

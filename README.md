@@ -8,14 +8,23 @@ Two approaches available to use this:
 
 ## What's included
 
-- **zsh** - Primary shell with Antidote plugin manager
-- **fish** - Secondary shell for experimentation
-- **Starship** - Cross-shell prompt (ASCII-safe, works everywhere)
-- **Ghostty** - Terminal config (ristretto theme)
-- **Alacritty** - Terminal config (ristretto theme)
-- **Zellij** - Terminal multiplexer config
-- **Cross-platform package installer** - Installs CLI tools, dev tools, runtimes, desktop apps, and dev editors
-- **1Password integration** - SSH agent, git commit signing
+**🎯 One-command setup** - Interactive wizard (`setup-wizard.sh`) or simple flags (`--all`, `--extra`) to install everything you need
+
+**🌍 Truly cross-platform** - Works seamlessly on macOS (Homebrew), Ubuntu/Debian (apt), and Arch/CachyOS (pacman). Same commands, same configs, everywhere while uses the system package manager
+
+**⚡ Modern shell experience** - zsh with Antidote plugins, fish for experimentation, Starship prompt (ASCII-safe, works in any terminal), plus Zellij multiplexer
+
+**🖥️ Beautiful terminals** - Pre-configured Ghostty and Alacritty with ristretto theme, optimized for productivity
+
+**🛠️ Complete dev environment** - Installs 20+ CLI tools (eza, fzf, zoxide, bat, ripgrep, lazygit, etc.), dev tools (compilers, build systems), runtimes (mise, uv, rustup, nvm), and your choice of editors (VS Code, Cursor, Zed, Neovim)
+
+**📦 Desktop apps** - One-command installs for Chrome, Discord, Spotify, Signal, Ollama, Steam, Zoom, and more
+
+**🔐 Security built-in** - 1Password SSH agent integration, git commit signing, secure defaults
+
+**🤖 Production-ready** - Docker-based integration tests, automated linting, CI/CD on GitHub Actions. This isn't just configs—it's a maintained system.
+
+**🔄 Multi-machine sync** - Choose traditional symlinks for simplicity, or Chezmoi for state-based management across multiple machines
 
 ## Quick install
 
@@ -97,7 +106,7 @@ See [CHEZMOI.md](CHEZMOI.md) for full documentation.
 | gcc/clang | C/C++ compilers |
 | llvm | Compiler infrastructure |
 | pkg-config | Library helper |
-| ccache/sccache | Compiler cache |
+| ccache | Compiler cache |
 | jq | JSON processor for CLI |
 
 ### Runtimes (`--runtimes`)
