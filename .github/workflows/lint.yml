@@ -24,13 +24,17 @@ jobs:
           echo ""
           echo "=== Checking Shell Scripts ==="
 
-          # Find all shell scripts
+          # Find all shell scripts (exclude .tmpl files - they contain Go templates)
           scripts=$(find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+            ! -name "*.tmpl" \
             ! -path "./.git/*" \
-            ! -path "./node_modules/*")
+            ! -path "./node_modules/*" \
+            ! -path "./chezmoi/.chezmoiscripts/*")
 
-          # Also check files with shell shebangs
+          # Also check files with shell shebangs (exclude .tmpl files)
           shebang_scripts=$(find . -type f ! -path "./.git/*" ! -path "./node_modules/*" \
+            ! -name "*.tmpl" \
+            ! -path "./chezmoi/.chezmoiscripts/*" \
             -exec grep -l "^#!.*\(bash\|sh\)" {} \; 2>/dev/null || true)
 
           # Combine and deduplicate
