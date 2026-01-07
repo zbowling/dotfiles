@@ -575,9 +575,9 @@ install_fonts() {
         fi
     )
 
-    # Refresh font cache
+    # Refresh font cache (only user fonts to avoid permission errors)
     echo "Refreshing font cache..."
-    fc-cache -f
+    fc-cache -f ~/.local/share/fonts
 
     echo "Fonts installed to ~/.local/share/fonts"
 }
