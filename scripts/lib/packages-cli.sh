@@ -71,7 +71,16 @@ install_cli_packages() {
 
 install_lazygit_debian() {
     if command -v lazygit &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] lazygit (already installed)"
+            return
+        fi
         echo "lazygit already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] lazygit"
         return
     fi
 
@@ -85,7 +94,16 @@ install_lazygit_debian() {
 
 install_lazydocker_debian() {
     if command -v lazydocker &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] lazydocker (already installed)"
+            return
+        fi
         echo "lazydocker already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] lazydocker"
         return
     fi
 
@@ -95,7 +113,16 @@ install_lazydocker_debian() {
 
 install_atuin_debian() {
     if command -v atuin &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] atuin (already installed)"
+            return
+        fi
         echo "atuin already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] atuin"
         return
     fi
 
@@ -105,7 +132,16 @@ install_atuin_debian() {
 
 install_gum_debian() {
     if command -v gum &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] gum (already installed)"
+            return
+        fi
         echo "gum already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] gum"
         return
     fi
 
@@ -120,7 +156,16 @@ install_gum_debian() {
 
 install_tldr_debian() {
     if command -v tldr &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] tldr (already installed)"
+            return
+        fi
         echo "tldr already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] tldr"
         return
     fi
 
