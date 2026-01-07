@@ -11,7 +11,16 @@ install_vscode() {
     echo ""
 
     if command -v code &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] VS Code (already installed)"
+            return
+        fi
         echo "VS Code already installed: $(code --version | head -1)"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] VS Code"
         return
     fi
 
@@ -54,13 +63,32 @@ install_cursor() {
 
     if is_macos; then
         if [[ -d "/Applications/Cursor.app" ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                echo "[SKIP] Cursor (already installed)"
+                return
+            fi
             echo "Cursor already installed"
             return
         fi
+
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[WOULD INSTALL] Cursor"
+            return
+        fi
+
         brew install --cask cursor
     elif is_debian || is_arch; then
         if [[ -f /opt/cursor.appimage ]]; then
+            if [[ "$DRY_RUN" == true ]]; then
+                echo "[SKIP] Cursor (already installed)"
+                return
+            fi
             echo "Cursor already installed"
+            return
+        fi
+
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[WOULD INSTALL] Cursor"
             return
         fi
 
@@ -103,7 +131,16 @@ install_zed() {
     echo ""
 
     if command -v zed &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Zed (already installed)"
+            return
+        fi
         echo "Zed already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Zed"
         return
     fi
 
@@ -127,7 +164,16 @@ install_antigravity() {
     echo ""
 
     if command -v antigravity &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] Antigravity (already installed)"
+            return
+        fi
         echo "Antigravity already installed: $(antigravity --version 2>/dev/null || echo 'version unknown')"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Antigravity"
         return
     fi
 
@@ -294,6 +340,21 @@ install_neovim_lazyvim() {
     echo ""
     echo "=== Installing Neovim + LazyVim ==="
     echo ""
+
+    # Check if LazyVim is already installed
+    if [[ -f ~/.config/nvim/.lazyvim ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] LazyVim (already installed)"
+            return
+        fi
+        echo "LazyVim already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] Neovim + LazyVim"
+        return
+    fi
 
     # Install Neovim if not present
     if ! command -v nvim &> /dev/null; then

@@ -23,7 +23,16 @@ install_mise() {
     echo "--- Installing mise (polyglot version manager) ---"
 
     if command -v mise &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] mise (already installed)"
+            return
+        fi
         echo "mise already installed: $(mise --version)"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] mise"
         return
     fi
 
@@ -40,7 +49,16 @@ install_uv() {
     echo "--- Installing uv (Python package manager) ---"
 
     if command -v uv &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] uv (already installed)"
+            return
+        fi
         echo "uv already installed: $(uv --version)"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] uv"
         return
     fi
 
@@ -54,7 +72,16 @@ install_nvm() {
     echo "--- Installing nvm (Node version manager) ---"
 
     if [[ -d "$HOME/.nvm" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] nvm (already installed)"
+            return
+        fi
         echo "nvm already installed"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] nvm"
         return
     fi
 
@@ -71,7 +98,16 @@ install_rustup() {
     echo "--- Installing rustup (Rust toolchain) ---"
 
     if command -v rustup &> /dev/null; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] rustup (already installed)"
+            return
+        fi
         echo "rustup already installed: $(rustup --version)"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] rustup"
         return
     fi
 
