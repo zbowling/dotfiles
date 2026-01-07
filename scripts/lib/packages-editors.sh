@@ -126,40 +126,40 @@ install_antigravity() {
     echo "=== Installing Google Antigravity ==="
     echo ""
 
-    if is_macos; then
-        if [[ -d "/Applications/Antigravity.app" ]]; then
-            echo "Antigravity already installed"
-            return
-        fi
-        brew install --cask antigravity
-    elif is_debian || is_arch; then
-        if [[ -f /opt/antigravity/antigravity ]] || command -v antigravity &> /dev/null; then
-            echo "Antigravity already installed"
-            return
-        fi
-
-        echo "Downloading Antigravity..."
-        cd /tmp
-        # Download Linux tarball
-        curl -fsSL "https://antigravity.google/download/linux" -o antigravity-linux.tar.gz
-        sudo mkdir -p /opt/antigravity
-        sudo tar -xzf antigravity-linux.tar.gz -C /opt/antigravity --strip-components=1
-        sudo ln -sf /opt/antigravity/antigravity /usr/local/bin/antigravity
-        rm antigravity-linux.tar.gz
-        cd - > /dev/null
-
-        # Create desktop entry
-        sudo tee /usr/share/applications/antigravity.desktop > /dev/null <<EOF
-[Desktop Entry]
-Name=Antigravity
-Comment=Google AI-powered IDE
-Exec=/opt/antigravity/antigravity
-Icon=antigravity
-Type=Application
-Categories=Development;IDE;
-EOF
-        echo "Antigravity installed to /opt/antigravity"
+    if command -v antigravity &> /dev/null; then
+        echo "Antigravity already installed: $(antigravity --version 2>/dev/null || echo 'version unknown')"
+        return
     fi
+
+    if is_macos; then
+        brew install --cask antigravity
+    elif is_debian; then
+        # Add Antigravity apt repository
+        echo "Adding Antigravity repository..."
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
+            sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
+            sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
+
+        echo "Installing Antigravity..."
+        sudo apt update
+        sudo apt install -y antigravity
+    elif is_arch; then
+        # Check if available in AUR
+        if [[ "$PKG_MANAGER" != "pacman" ]]; then
+            echo "Installing Antigravity from AUR..."
+            pkg_install antigravity-bin
+        else
+            echo "Antigravity requires an AUR helper (paru/yay). Install manually:"
+            echo "  paru -S antigravity-bin"
+            echo "  or visit: https://antigravity.google"
+            return 1
+        fi
+    fi
+
+    echo "Antigravity installed!"
+    echo "Run 'antigravity' to launch or visit: https://antigravity.google"
 }
 
 # ============================================================
