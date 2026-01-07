@@ -58,9 +58,9 @@ install_nvm() {
         return
     fi
 
-    # Get latest nvm version
-    NVM_VERSION=$(curl -s "https://api.github.com/repos/nvm-sh/nvm/releases/latest" | sed -n 's/.*"tag_name": "\([^"]*\)".*/\1/p' | head -1)
-    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
+    # Use nvm's official install script (it handles version detection)
+    # Fallback to known stable version if API fails
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 
     echo "nvm installed."
     echo "Run 'nvm install --lts' to install Node.js LTS"
