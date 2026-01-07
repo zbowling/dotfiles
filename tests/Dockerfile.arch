@@ -1,0 +1,30 @@
+FROM archlinux:latest
+
+# Update and install base dependencies
+RUN pacman -Syu --noconfirm && \
+    pacman -S --noconfirm \
+    sudo \
+    curl \
+    git \
+    zsh \
+    fish \
+    base-devel \
+    && pacman -Scc --noconfirm
+
+# Create test user with sudo access
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Install paru (AUR helper) as testuser
+USER testuser
+WORKDIR /home/testuser
+RUN git clone https://aur.archlinux.org/paru-bin.git && \
+    cd paru-bin && \
+    makepkg -si --noconfirm && \
+    cd .. && rm -rf paru-bin
+
+# Copy dotfiles
+COPY --chown=testuser:testuser . /home/testuser/dotfiles
+
+# Run tests
+CMD ["/home/testuser/dotfiles/tests/test-install.sh"]

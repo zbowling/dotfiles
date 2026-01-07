@@ -1,0 +1,29 @@
+FROM ubuntu:24.04
+
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install base dependencies
+RUN apt-get update && apt-get install -y \
+    sudo \
+    curl \
+    git \
+    zsh \
+    fish \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create test user with sudo access
+RUN useradd -m -s /bin/bash testuser && \
+    echo "testuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Switch to test user
+USER testuser
+WORKDIR /home/testuser
+
+# Copy dotfiles
+COPY --chown=testuser:testuser . /home/testuser/dotfiles
+
+# Run tests
+CMD ["/home/testuser/dotfiles/tests/test-install.sh"]

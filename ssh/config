@@ -1,0 +1,6 @@
+# SSH configuration
+# Managed by dotfiles
+
+# 1Password SSH Agent
+Host *
+    IdentityAgent ~/.1password/agent.sock

@@ -1,0 +1,134 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Run ShellCheck on scripts
+        run: |
+          echo "=== ShellCheck Version ==="
+          shellcheck --version
+          echo ""
+          echo "=== Checking Shell Scripts ==="
+
+          # Find all shell scripts
+          scripts=$(find . -type f \( -name "*.sh" -o -name "*.bash" \) \
+            ! -path "./.git/*" \
+            ! -path "./node_modules/*")
+
+          # Also check files with shell shebangs
+          shebang_scripts=$(find . -type f ! -path "./.git/*" ! -path "./node_modules/*" \
+            -exec grep -l "^#!.*\(bash\|sh\)" {} \; 2>/dev/null || true)
+
+          # Combine and deduplicate
+          all_scripts=$(echo -e "$scripts\n$shebang_scripts" | sort -u | grep -v "^$")
+
+          echo "Found scripts:"
+          echo "$all_scripts" | sed 's/^/  /'
+          echo ""
+
+          # Run shellcheck
+          failed=0
+          for script in $all_scripts; do
+            echo "Checking: $script"
+            if ! shellcheck -x "$script"; then
+              failed=1
+            fi
+          done
+
+          if [ $failed -eq 1 ]; then
+            echo ""
+            echo "ShellCheck found issues. Please fix them."
+            exit 1
+          fi
+
+          echo ""
+          echo "All scripts passed ShellCheck!"
+
+  shfmt:
+    name: Shell Formatting (shfmt)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install shfmt
+        run: |
+          curl -sS https://webinstall.dev/shfmt | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Check shell formatting
+        run: |
+          echo "=== shfmt Version ==="
+          ~/.local/bin/shfmt --version
+          echo ""
+          echo "=== Checking Shell Formatting ==="
+
+          # Check formatting (indent=4, binary ops at start of line, space after redirects)
+          if ! ~/.local/bin/shfmt -d -i 4 -bn -sr -ln bash \
+            install.sh \
+            scripts/*.sh \
+            scripts/lib/*.sh \
+            tests/*.sh 2>&1; then
+            echo ""
+            echo "Formatting issues found. Run: shfmt -w -i 4 -bn -sr -ln bash <file>"
+            echo "Or use: ./scripts/lint.sh --fix"
+            # Don't fail on formatting - just warn
+            echo "::warning::Shell scripts have formatting issues"
+          else
+            echo "All scripts are properly formatted!"
+          fi
+
+  markdown:
+    name: Markdown Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Run markdownlint
+        run: |
+          echo "=== Checking Markdown Files ==="
+          markdownlint '**/*.md' --ignore node_modules --ignore .git || {
+            echo ""
+            echo "::warning::Markdown lint issues found (non-blocking)"
+          }
+
+  yaml:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Run yamllint
+        run: |
+          echo "=== Checking YAML Files ==="
+          yamllint -d relaxed .github/workflows/*.yml || {
+            echo ""
+            echo "::warning::YAML lint issues found (non-blocking)"
+          }

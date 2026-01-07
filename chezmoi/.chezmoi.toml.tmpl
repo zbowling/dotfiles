@@ -1,0 +1,15 @@
+# Chezmoi configuration template
+# This runs during `chezmoi init` to generate ~/.config/chezmoi/chezmoi.toml
+
+[data]
+    # These get merged with .chezmoidata.toml
+    # Customize per-machine here
+
+{{ if eq .chezmoi.os "darwin" -}}
+    # macOS defaults
+    install_apps = true
+    configure_macos_defaults = true
+{{ else if eq .chezmoi.os "linux" -}}
+    # Linux defaults
+    install_apps = true
+{{ end -}}

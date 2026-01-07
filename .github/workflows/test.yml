@@ -1,0 +1,273 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-ubuntu:
+    name: Test (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Ubuntu Tests
+        run: ./tests/run-tests.sh ubuntu
+
+  test-arch:
+    name: Test (Arch Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Run Arch Tests
+        run: ./tests/run-tests.sh arch
+
+  test-macos:
+    name: Test (macOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: System Info
+        run: |
+          echo "=== macOS Version ==="
+          sw_vers
+          echo ""
+          echo "=== Xcode Version ==="
+          xcode-select -p
+          echo ""
+          echo "=== Homebrew Version ==="
+          brew --version
+
+      - name: Run install.sh
+        run: |
+          echo "=== Running install.sh ==="
+          ./install.sh
+
+      - name: Verify Symlinks
+        run: |
+          echo "=== Verifying Symlinks ==="
+
+          check_symlink() {
+            if [[ -L "$1" ]]; then
+              echo "✓ $1 -> $(readlink "$1")"
+              return 0
+            else
+              echo "✗ $1 is not a symlink"
+              return 1
+            fi
+          }
+
+          failed=0
+          check_symlink ~/.zshrc || failed=1
+          check_symlink ~/.zsh_plugins.txt || failed=1
+          check_symlink ~/.config/starship.toml || failed=1
+          check_symlink ~/.config/fish/config.fish || failed=1
+          check_symlink ~/.config/ghostty/config || failed=1
+          check_symlink ~/.config/alacritty || failed=1
+          check_symlink ~/.config/zellij || failed=1
+
+          if [[ $failed -eq 1 ]]; then
+            echo ""
+            echo "Some symlinks are missing!"
+            exit 1
+          fi
+
+          echo ""
+          echo "All symlinks verified!"
+
+      - name: Install CLI Tools
+        run: |
+          echo "=== Installing CLI Tools ==="
+          ./scripts/install-packages.sh --cli
+
+      - name: Verify CLI Tools
+        run: |
+          echo "=== Verifying CLI Tools ==="
+
+          check_cmd() {
+            if command -v "$1" &> /dev/null; then
+              echo "✓ $1: $(command -v "$1")"
+              return 0
+            else
+              echo "✗ $1: not found"
+              return 1
+            fi
+          }
+
+          failed=0
+          check_cmd git || failed=1
+          check_cmd curl || failed=1
+          check_cmd jq || failed=1
+          check_cmd fzf || failed=1
+          check_cmd eza || failed=1
+          check_cmd bat || failed=1
+          check_cmd rg || failed=1
+          check_cmd fd || failed=1
+          check_cmd zoxide || failed=1
+          check_cmd btop || failed=1
+          check_cmd nvim || failed=1
+          check_cmd lazygit || failed=1
+          check_cmd gh || failed=1
+          check_cmd delta || failed=1
+          check_cmd http || failed=1  # httpie
+          check_cmd tldr || failed=1
+          check_cmd gum || failed=1
+          check_cmd atuin || failed=1
+
+          if [[ $failed -eq 1 ]]; then
+            echo ""
+            echo "Some CLI tools are missing!"
+            exit 1
+          fi
+
+          echo ""
+          echo "All CLI tools verified!"
+
+      - name: Install Dev Tools
+        run: |
+          echo "=== Installing Dev Tools ==="
+          ./scripts/install-packages.sh --dev
+
+      - name: Verify Dev Tools
+        run: |
+          echo "=== Verifying Dev Tools ==="
+
+          check_cmd() {
+            if command -v "$1" &> /dev/null; then
+              echo "✓ $1: $(command -v "$1")"
+              return 0
+            else
+              echo "✗ $1: not found"
+              return 1
+            fi
+          }
+
+          failed=0
+          check_cmd cmake || failed=1
+          check_cmd bun || failed=1
+
+          # Check LLVM (may be in different locations)
+          if command -v clang &> /dev/null || [[ -x /usr/local/opt/llvm/bin/clang ]]; then
+            echo "✓ clang: found"
+          else
+            echo "✗ clang: not found"
+            failed=1
+          fi
+
+          if [[ $failed -eq 1 ]]; then
+            echo ""
+            echo "Some dev tools are missing!"
+            exit 1
+          fi
+
+          echo ""
+          echo "Dev tools verified!"
+
+      - name: Install Runtimes
+        run: |
+          echo "=== Installing Runtimes ==="
+          ./scripts/install-packages.sh --runtimes
+
+      - name: Verify Runtimes
+        run: |
+          echo "=== Verifying Runtimes ==="
+
+          # Source shell config to get PATH updates
+          export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+
+          check_cmd() {
+            if command -v "$1" &> /dev/null; then
+              echo "✓ $1: $(command -v "$1")"
+              return 0
+            else
+              echo "✗ $1: not found"
+              return 1
+            fi
+          }
+
+          failed=0
+          check_cmd mise || failed=1
+          check_cmd uv || failed=1
+          check_cmd rustup || failed=1
+          check_cmd cargo || failed=1
+
+          # nvm is sourced, not a binary
+          if [[ -d "$HOME/.nvm" ]]; then
+            echo "✓ nvm: $HOME/.nvm"
+          else
+            echo "✗ nvm: not found"
+            failed=1
+          fi
+
+          if [[ $failed -eq 1 ]]; then
+            echo ""
+            echo "Some runtimes are missing!"
+            exit 1
+          fi
+
+          echo ""
+          echo "Runtimes verified!"
+
+      - name: Test Zsh Config Syntax
+        run: |
+          echo "=== Testing Zsh Config Syntax ==="
+          # Install antidote first
+          git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
+
+          # Test zsh config syntax
+          zsh -n ~/.zshrc && echo "✓ zsh config syntax valid"
+
+      - name: Test Fish Config Syntax
+        run: |
+          echo "=== Testing Fish Config Syntax ==="
+          # Install fish if not present
+          brew list fish &>/dev/null || brew install fish
+
+          # Test fish config syntax
+          fish -n ~/.config/fish/config.fish && echo "✓ fish config syntax valid"
+
+      - name: Test Git Configuration
+        run: |
+          echo "=== Testing Git Config ==="
+          # Set up git identity for testing
+          git config --global user.name "Test User"
+          git config --global user.email "test@example.com"
+
+          # Run git config
+          ./scripts/install-packages.sh --init-git <<< "n"
+
+          # Verify settings
+          echo ""
+          echo "Git config values:"
+          git config --global --get merge.conflictStyle && echo "  merge.conflictStyle set"
+          git config --global --get pull.ff && echo "  pull.ff set"
+          git config --global --get rebase.autosquash && echo "  rebase.autosquash set"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "========================================"
+          echo "  macOS Tests Complete!"
+          echo "========================================"
+          echo ""
+          echo "Tested:"
+          echo "  ✓ install.sh (symlinks)"
+          echo "  ✓ CLI tools installation"
+          echo "  ✓ Dev tools installation"
+          echo "  ✓ Runtimes installation"
+          echo "  ✓ Zsh config syntax"
+          echo "  ✓ Fish config syntax"
+          echo "  ✓ Git configuration"

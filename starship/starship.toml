@@ -1,0 +1,82 @@
+# Starship prompt configuration
+# Classic, clean style that works in any terminal (ASCII-safe)
+# https://starship.rs/config/
+
+# Prompt format
+format = """
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$nodejs\
+$python\
+$rust\
+$golang\
+$docker_context\
+$line_break\
+$character"""
+
+# Prompt character
+[character]
+success_symbol = "[>](bold green)"
+error_symbol = "[>](bold red)"
+vimcmd_symbol = "[<](bold green)"
+
+# Directory
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+style = "bold cyan"
+
+# Git
+[git_branch]
+symbol = ""
+style = "bold purple"
+
+[git_status]
+style = "bold red"
+
+# Languages - ASCII symbols instead of Nerd Font icons
+[nodejs]
+symbol = "node "
+style = "bold green"
+
+[python]
+symbol = "py "
+style = "bold yellow"
+
+[rust]
+symbol = "rs "
+style = "bold red"
+
+[golang]
+symbol = "go "
+style = "bold cyan"
+
+[docker_context]
+symbol = "docker "
+style = "bold blue"
+
+# Disable things we don't need
+[aws]
+disabled = true
+
+[gcloud]
+disabled = true
+
+[azure]
+disabled = true
+
+# Username/hostname (only show when relevant)
+[username]
+show_always = false
+style_user = "bold yellow"
+
+[hostname]
+ssh_only = true
+style = "bold green"
+
+# Package version
+[package]
+disabled = true

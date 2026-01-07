@@ -1,0 +1,10 @@
+# OS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
+
+# Local overrides (not tracked)
+*.local

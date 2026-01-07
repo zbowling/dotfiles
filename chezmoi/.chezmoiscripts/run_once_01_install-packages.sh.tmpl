@@ -1,0 +1,51 @@
+#!/bin/bash
+# Install packages using the dotfiles installer
+# This runs once on first chezmoi apply
+#
+# To re-run: chezmoi state delete-bucket --bucket=scriptState && chezmoi apply
+
+set -e
+
+echo "=== Installing Packages ==="
+
+DOTFILES_DIR="{{ .chezmoi.sourceDir }}/.."
+
+# Check if our install script exists
+if [[ -f "$DOTFILES_DIR/scripts/install-packages.sh" ]]; then
+    cd "$DOTFILES_DIR"
+
+    # Install based on configuration
+    {{ if .install_cli -}}
+    ./scripts/install-packages.sh --cli
+    {{ end -}}
+
+    {{ if .install_dev -}}
+    ./scripts/install-packages.sh --dev
+    {{ end -}}
+
+    {{ if .install_runtimes -}}
+    ./scripts/install-packages.sh --runtimes
+    {{ end -}}
+
+    {{ if .install_apps -}}
+    ./scripts/install-packages.sh --apps
+    {{ end -}}
+
+    {{ if .install_1password -}}
+    ./scripts/install-packages.sh --1password
+    {{ end -}}
+
+    {{ if .install_docker -}}
+    ./scripts/install-packages.sh --docker
+    {{ end -}}
+
+    {{ if .install_tailscale -}}
+    ./scripts/install-packages.sh --tailscale
+    {{ end -}}
+
+else
+    echo "Warning: install-packages.sh not found at $DOTFILES_DIR/scripts/"
+    echo "Skipping package installation."
+fi
+
+echo "Package installation complete!"

@@ -1,0 +1,27 @@
+# Files to ignore when applying dotfiles
+# https://www.chezmoi.io/reference/special-files-and-directories/chezmoiignore/
+
+# README and docs
+README.md
+LICENSE
+AGENTS.md
+TAILSCALE.md
+CLAUDE.md
+
+# Git
+.git
+.gitignore
+
+# Scripts (handled separately)
+scripts/
+tests/
+
+# macOS specific files on Linux
+{{ if ne .chezmoi.os "darwin" }}
+Library/
+{{ end }}
+
+# Linux specific files on macOS
+{{ if ne .chezmoi.os "linux" }}
+.local/share/applications/
+{{ end }}

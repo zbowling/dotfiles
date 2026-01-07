@@ -1,0 +1,17 @@
+# Chezmoi data file
+# These values are used in templates
+# Override per-machine in ~/.config/chezmoi/chezmoi.toml
+
+# Package installation options
+# Set to true to install during chezmoi apply
+install_cli = true
+install_dev = true
+install_runtimes = true
+install_apps = false
+install_1password = false
+install_docker = false
+install_tailscale = false
+
+# Configuration options
+configure_git = true
+configure_macos_defaults = true

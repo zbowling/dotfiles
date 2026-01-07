@@ -1,0 +1,53 @@
+#!/bin/bash
+# Post-installation setup
+# Runs once after all dotfiles are applied
+
+set -e
+
+echo "=== Post-Install Setup ==="
+
+# Install Antidote (zsh plugin manager) if not present
+if [[ ! -d ~/.antidote ]]; then
+    echo "Installing Antidote..."
+    git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
+fi
+
+# Configure git defaults if requested
+{{ if .configure_git -}}
+DOTFILES_DIR="{{ .chezmoi.sourceDir }}/.."
+if [[ -f "$DOTFILES_DIR/scripts/install-packages.sh" ]]; then
+    cd "$DOTFILES_DIR"
+    ./scripts/install-packages.sh --init-git
+fi
+{{ end -}}
+
+# macOS defaults
+{{ if and (eq .chezmoi.os "darwin") .configure_macos_defaults -}}
+DOTFILES_DIR="{{ .chezmoi.sourceDir }}/.."
+if [[ -f "$DOTFILES_DIR/scripts/install-packages.sh" ]]; then
+    cd "$DOTFILES_DIR"
+    ./scripts/install-packages.sh --macos-defaults
+fi
+{{ end -}}
+
+echo ""
+echo "========================================"
+echo "  Setup Complete!"
+echo "========================================"
+echo ""
+echo "Next steps:"
+echo "  1. Restart your terminal or: source ~/.zshrc"
+echo "  2. Set zsh as default: chsh -s \$(which zsh)"
+{{ if .install_1password -}}
+echo ""
+echo "1Password setup:"
+echo "  - Open 1Password and sign in"
+echo "  - Settings > Developer > Integrate with 1Password CLI"
+echo "  - Settings > Developer > Set Up SSH Agent"
+{{ end -}}
+{{ if .install_tailscale -}}
+echo ""
+echo "Tailscale setup:"
+echo "  - Run: sudo tailscale up"
+{{ end -}}
+echo ""
