@@ -22,7 +22,6 @@ install_cli_packages() {
         ripgrep
         neovim
         httpie
-        tldr
     )
 
     # Install common packages
@@ -39,6 +38,7 @@ install_cli_packages() {
         pkg_install git-delta
         pkg_install atuin
         pkg_install gum
+        pkg_install tldr
     elif is_debian; then
         pkg_install fd-find
         pkg_install gh
@@ -48,6 +48,7 @@ install_cli_packages() {
         install_lazydocker_debian
         install_atuin_debian
         install_gum_debian
+        install_tldr_debian
     elif is_arch; then
         pkg_install fd
         pkg_install github-cli
@@ -55,6 +56,7 @@ install_cli_packages() {
         pkg_install git-delta
         pkg_install atuin
         pkg_install gum
+        pkg_install tldr  # tealdeer package
         # lazydocker is in AUR
         if [[ "$PKG_MANAGER" != "pacman" ]]; then
             pkg_install lazydocker-bin
@@ -114,6 +116,36 @@ install_gum_debian() {
     echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
     sudo apt update
     sudo apt install -y gum
+}
+
+install_tldr_debian() {
+    if command -v tldr &> /dev/null; then
+        echo "tldr already installed"
+        return
+    fi
+
+    echo "Installing tldr (tealdeer)..."
+    # Install tealdeer (Rust implementation) via cargo or binary
+    if command -v cargo &> /dev/null; then
+        cargo install tealdeer
+    else
+        # Download pre-built binary
+        local arch
+        arch=$(uname -m)
+        local url
+        if [[ "$arch" == "x86_64" ]]; then
+            url="https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-x86_64-musl"
+        elif [[ "$arch" == "aarch64" ]]; then
+            url="https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-arm-musleabi"
+        else
+            echo "Unsupported architecture for tldr: $arch"
+            return
+        fi
+        curl -fsSL "$url" -o /tmp/tldr
+        sudo install -m 755 /tmp/tldr /usr/local/bin/tldr
+        rm /tmp/tldr
+    fi
+    echo "tldr installed! Run 'tldr --update' to download pages."
 }
 
 # 1Password desktop app and CLI
