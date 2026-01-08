@@ -31,7 +31,7 @@ This dotfiles repository supports two approaches:
 ### Option B: One-liner on a new machine
 
 ```bash
-# Replace 'zbowling' with your GitHub username
+# Replace 'zbowling' with your GitHub username if you forked
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply zbowling
 ```
 

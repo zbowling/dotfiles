@@ -75,6 +75,11 @@ is_debian() {
     [[ "$PKG_MANAGER" == "apt" ]]
 }
 
+# Helper to check if running on Fedora/RHEL
+is_fedora() {
+    [[ "$PKG_MANAGER" == "dnf" ]]
+}
+
 # Helper to install a package with the detected package manager
 pkg_install() {
     echo "Installing: $*"

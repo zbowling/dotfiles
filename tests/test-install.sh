@@ -142,10 +142,8 @@ log_info "Running install.sh..."
 
 cd "$DOTFILES_DIR"
 
-# Install Antidote first (required for zsh)
-if [[ ! -d ~/.antidote ]]; then
-    git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
-fi
+# Note: Antidote auto-installs on first zsh run via config/zsh/rc.d/20-plugins.zsh
+# We don't pre-install it here - the auto-install pattern is tested separately
 
 # Run install script
 ./install.sh
@@ -157,24 +155,36 @@ log_info "Running install.sh again (idempotency test)..."
 echo ""
 
 # ==========================================
-# Test 2: Verify symlinks
+# Test 2: Verify symlinks (XDG Base Directory structure)
 # ==========================================
-echo "--- Test: Symlinks ---"
-test_symlink ~/.zshrc "$DOTFILES_DIR/zsh/.zshrc" "~/.zshrc symlink"
-test_symlink ~/.zsh_plugins.txt "$DOTFILES_DIR/zsh/.zsh_plugins.txt" "~/.zsh_plugins.txt symlink"
+echo "--- Test: Symlinks (XDG structure) ---"
+# Zsh: bootstrap file + config directory
+test_symlink ~/.zshenv "$DOTFILES_DIR/home/dot_zshenv" "~/.zshenv bootstrap symlink"
+test_dir_symlink ~/.config/zsh "$DOTFILES_DIR/config/zsh" "~/.config/zsh directory symlink"
+# Verify critical zsh files exist in the symlinked directory
+test_file ~/.config/zsh/.zshrc "zsh config file exists"
+test_file ~/.config/zsh/.zsh_plugins.txt "zsh plugins file exists"
+# Bash: config directory (sourced from ~/.bashrc)
+test_dir_symlink ~/.config/bash "$DOTFILES_DIR/config/bash" "~/.config/bash directory symlink"
+# Fish: config file + conf.d directory
+test_symlink ~/.config/fish/config.fish "$DOTFILES_DIR/config/fish/config.fish" "fish config symlink"
+test_dir_symlink ~/.config/fish/conf.d "$DOTFILES_DIR/config/fish/conf.d" "fish conf.d directory symlink"
+# Other configs
 test_symlink ~/.config/starship.toml "$DOTFILES_DIR/starship/starship.toml" "starship.toml symlink"
-test_symlink ~/.config/fish/config.fish "$DOTFILES_DIR/fish/config.fish" "fish config symlink"
 test_symlink ~/.config/ghostty/config "$DOTFILES_DIR/ghostty/config" "ghostty config symlink"
 test_dir_symlink ~/.config/alacritty "$DOTFILES_DIR/alacritty" "alacritty config symlink"
 test_dir_symlink ~/.config/zellij "$DOTFILES_DIR/zellij" "zellij config symlink"
 echo ""
 
 # ==========================================
-# Test 3: Verify bash patches
+# Test 3: Verify bash configuration (XDG modular structure)
 # ==========================================
 echo "--- Test: Bash configuration ---"
-test_contains ~/.bashrc "starship init bash" "bashrc has starship"
-test_contains ~/.bashrc "1password/agent.sock" "bashrc has 1Password SSH agent"
+# Check that bashrc has the XDG loader that sources rc.d/
+test_contains ~/.bashrc "XDG_CONFIG_HOME.*bash/rc.d" "bashrc sources modular configs"
+# Check that the modular configs contain expected content
+test_contains ~/.config/bash/rc.d/30-tools.bash "starship init bash" "30-tools.bash has starship"
+test_contains ~/.config/bash/rc.d/15-environment.bash "1password" "15-environment.bash has 1Password"
 echo ""
 
 # ==========================================
@@ -198,7 +208,8 @@ echo ""
 # ==========================================
 echo "--- Test: Zsh configuration loads ---"
 log_info "Testing zsh config syntax..."
-if zsh -n ~/.zshrc 2>/dev/null; then
+# With XDG structure, ZDOTDIR is ~/.config/zsh
+if ZDOTDIR=~/.config/zsh zsh -n ~/.config/zsh/.zshrc 2>/dev/null; then
     log_pass "zsh config syntax valid"
 else
     log_fail "zsh config syntax valid"

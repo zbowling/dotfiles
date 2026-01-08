@@ -6,348 +6,185 @@
 # Visual Studio Code
 # ============================================================
 install_vscode() {
-    echo ""
-    echo "=== Installing Visual Studio Code ==="
-    echo ""
+    print_section "Installing Visual Studio Code"
 
-    if command -v code &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] VS Code (already installed)"
-            return
-        fi
-        echo "VS Code already installed: $(code --version | head -1)"
-        return
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] VS Code"
-        return
-    fi
+    require_not_installed code "VS Code" || return 0
 
     if is_macos; then
         brew install --cask visual-studio-code
     elif is_debian; then
-        # Add Microsoft apt repository
-        if [[ ! -f /etc/apt/keyrings/packages.microsoft.gpg ]]; then
-            echo "Adding Microsoft apt repository..."
-            (
-                cd /tmp || exit 1
-                wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-                sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
-                echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" | \
-                    sudo tee /etc/apt/sources.list.d/vscode.list > /dev/null
-                rm -f packages.microsoft.gpg
-            )
-            sudo apt update
-        fi
+        setup_apt_repo "Microsoft VS Code" \
+            "https://packages.microsoft.com/keys/microsoft.asc" \
+            "/etc/apt/keyrings/packages.microsoft.gpg" \
+            "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" \
+            "/etc/apt/sources.list.d/vscode.list"
         sudo apt install -y code
     elif is_arch; then
-        # VS Code is in AUR as visual-studio-code-bin
-        if [[ "$PKG_MANAGER" == "paru" ]]; then
-            paru -S --noconfirm --needed visual-studio-code-bin
-        elif [[ "$PKG_MANAGER" == "yay" ]]; then
-            yay -S --noconfirm --needed visual-studio-code-bin
-        else
-            echo "VS Code requires an AUR helper (paru or yay)"
-        fi
+        aur_install visual-studio-code-bin
     fi
+
+    status_success "VS Code"
 }
 
 # ============================================================
 # Cursor (AI-powered code editor)
 # ============================================================
 install_cursor() {
-    echo ""
-    echo "=== Installing Cursor ==="
-    echo ""
+    print_section "Installing Cursor"
+
+    require_app_not_installed "Cursor" "Cursor" || return 0
+    require_not_installed cursor "Cursor" || return 0
 
     if is_macos; then
-        if [[ -d "/Applications/Cursor.app" ]]; then
-            if [[ "$DRY_RUN" == true ]]; then
-                echo "[SKIP] Cursor (already installed)"
-                return
-            fi
-            echo "Cursor already installed"
-            return
-        fi
-
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[WOULD INSTALL] Cursor"
-            return
-        fi
-
         brew install --cask cursor
-    elif is_debian || is_arch; then
-        if [[ -f /opt/cursor.appimage ]]; then
-            if [[ "$DRY_RUN" == true ]]; then
-                echo "[SKIP] Cursor (already installed)"
-                return
-            fi
-            echo "Cursor already installed"
-            return
-        fi
-
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[WOULD INSTALL] Cursor"
-            return
-        fi
-
-        echo "Downloading Cursor AppImage..."
-        (
-            cd /tmp || exit 1
-            curl -L "https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable" | \
-                jq -r '.downloadUrl' | xargs curl -L -o cursor.appimage
-            sudo mv cursor.appimage /opt/cursor.appimage
-            sudo chmod +x /opt/cursor.appimage
-        )
-
-        # Install fuse for AppImage support
-        if is_debian; then
-            sudo apt install -y fuse3 libfuse2t64 2>/dev/null || sudo apt install -y fuse libfuse2 2>/dev/null || true
-        elif is_arch; then
-            sudo pacman -S --noconfirm --needed fuse2
-        fi
-
-        # Create desktop entry
-        sudo tee /usr/share/applications/cursor.desktop > /dev/null <<EOF
-[Desktop Entry]
-Name=Cursor
-Comment=AI-powered code editor
-Exec=/opt/cursor.appimage --no-sandbox
-Icon=cursor
-Type=Application
-Categories=Development;IDE;
+    elif is_debian; then
+        setup_apt_repo "Cursor" \
+            "https://downloads.cursor.com/keys/anysphere.asc" \
+            "/etc/apt/keyrings/cursor.gpg" \
+            "deb [arch=amd64,arm64 signed-by=/etc/apt/keyrings/cursor.gpg] https://downloads.cursor.com/aptrepo stable main" \
+            "/etc/apt/sources.list.d/cursor.list"
+        sudo apt install -y cursor
+    elif is_fedora; then
+        if [[ ! -f /etc/yum.repos.d/cursor.repo ]]; then
+            sudo tee /etc/yum.repos.d/cursor.repo << 'EOF'
+[cursor]
+name=Cursor
+baseurl=https://downloads.cursor.com/yumrepo
+enabled=1
+gpgcheck=1
+gpgkey=https://downloads.cursor.com/keys/anysphere.asc
 EOF
-        echo "Cursor installed to /opt/cursor.appimage"
+        fi
+        sudo dnf install -y cursor
+    elif is_arch; then
+        aur_install cursor-bin
     fi
+
+    status_success "Cursor"
 }
 
 # ============================================================
 # Zed Editor
 # ============================================================
 install_zed() {
-    echo ""
-    echo "=== Installing Zed ==="
-    echo ""
+    print_section "Installing Zed"
 
-    if command -v zed &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Zed (already installed)"
-            return
-        fi
-        echo "Zed already installed"
-        return
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] Zed"
-        return
-    fi
+    require_not_installed zed "Zed" || return 0
 
     if is_macos; then
         brew install --cask zed
     elif is_debian; then
-        # Zed provides an install script for Linux
+        # SECURITY NOTE: This uses curl|sh which is the official Zed install method.
+        # The script is from the official Zed website: https://zed.dev
         curl -fsSL https://zed.dev/install.sh | sh
     elif is_arch; then
-        # Zed is in community repo on Arch
         sudo pacman -S --noconfirm --needed zed
     fi
+
+    status_success "Zed"
 }
 
 # ============================================================
 # Google Antigravity IDE
 # ============================================================
 install_antigravity() {
-    echo ""
-    echo "=== Installing Google Antigravity ==="
-    echo ""
+    print_section "Installing Google Antigravity"
 
-    if command -v antigravity &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Antigravity (already installed)"
-            return
-        fi
-        echo "Antigravity already installed: $(antigravity --version 2>/dev/null || echo 'version unknown')"
-        return
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] Antigravity"
-        return
-    fi
+    require_not_installed antigravity "Antigravity" || return 0
 
     if is_macos; then
         brew install --cask antigravity
     elif is_debian; then
-        # Add Antigravity apt repository
-        echo "Adding Antigravity repository..."
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-            sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-            sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
-
-        echo "Installing Antigravity..."
-        sudo apt update
+        setup_apt_repo "Antigravity" \
+            "https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg" \
+            "/etc/apt/keyrings/antigravity-repo-key.gpg" \
+            "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" \
+            "/etc/apt/sources.list.d/antigravity.list"
         sudo apt install -y antigravity
     elif is_arch; then
-        # Check if available in AUR
-        if [[ "$PKG_MANAGER" != "pacman" ]]; then
-            echo "Installing Antigravity from AUR..."
-            pkg_install antigravity-bin
-        else
-            echo "Antigravity requires an AUR helper (paru/yay). Install manually:"
-            echo "  paru -S antigravity-bin"
-            echo "  or visit: https://antigravity.google"
-            return 1
-        fi
+        aur_install antigravity-bin
     fi
 
-    echo "Antigravity installed!"
-    echo "Run 'antigravity' to launch or visit: https://antigravity.google"
+    status_success "Antigravity"
 }
 
 # ============================================================
 # Gemini CLI
 # ============================================================
 install_gemini_cli() {
-    echo ""
-    echo "=== Installing Gemini CLI ==="
-    echo ""
+    print_section "Installing Gemini CLI"
 
-    # Check if already installed and handle dry-run
-    if command -v gemini &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Gemini CLI (already installed)"
-            return
-        fi
-        echo "Gemini CLI already installed"
-        return
-    fi
-
-    # In dry-run, report what would be done
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] Gemini CLI"
-        return
-    fi
+    require_not_installed gemini "Gemini CLI" || return 0
 
     if is_macos; then
         brew install gemini-cli
     else
-        # Requires Node.js 20+
-        if ! command -v node &> /dev/null; then
-            echo "Node.js required for Gemini CLI. Install with --runtimes first."
-            return
+        # Requires Node.js 20+ or bun
+        if find_cmd bun; then
+            "$FOUND_CMD_PATH" install --global @google/gemini-cli
+        elif require_node 20; then
+            find_cmd npm && "$FOUND_CMD_PATH" install -g @google/gemini-cli
+        else
+            return 1
         fi
-
-        local node_version
-        node_version=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-        if [[ "$node_version" -lt 20 ]]; then
-            echo "Gemini CLI requires Node.js 20+. Current: $(node --version)"
-            echo "Run: nvm install 20 && nvm use 20"
-            return
-        fi
-
-        npm install -g @google/gemini-cli
     fi
 
-    echo "Gemini CLI installed! Run 'gemini' to start."
+    status_success "Gemini CLI"
 }
 
 # ============================================================
 # OpenAI Codex CLI
 # ============================================================
 install_codex() {
-    echo ""
-    echo "=== Installing OpenAI Codex ==="
-    echo ""
+    print_section "Installing OpenAI Codex"
 
-    # Check if already installed and handle dry-run
-    if command -v codex &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Codex (already installed)"
-            return
-        fi
-        echo "Codex already installed"
-        return
-    fi
-
-    # In dry-run, report what would be done
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] Codex"
-        return
-    fi
+    require_not_installed codex "Codex" || return 0
 
     if is_macos; then
         brew install --cask codex
     else
-        # Install via bun/npm
-        if command -v bun &> /dev/null; then
-            echo "Installing Codex via bun..."
-            bun install --global @openai/codex
-        elif command -v npm &> /dev/null; then
-            echo "Installing Codex via npm..."
-            npm install -g @openai/codex
+        # Install via bun (preferred) or npm
+        if find_cmd bun; then
+            "$FOUND_CMD_PATH" install --global @openai/codex
+        elif find_cmd npm; then
+            "$FOUND_CMD_PATH" install -g @openai/codex
         else
-            echo "Bun or npm required for Codex. Install with --dev or --runtimes first."
+            require_js_runtime  # Will print helpful error
             return 1
         fi
     fi
 
-    echo "Codex installed! Run 'codex' to start."
+    status_success "Codex"
 }
 
 # ============================================================
 # Claude Code CLI
 # ============================================================
 install_claude_code() {
-    echo ""
-    echo "=== Installing Claude Code ==="
-    echo ""
+    print_section "Installing Claude Code"
 
-    # Check if already installed and handle dry-run
-    if command -v claude &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Claude Code (already installed)"
-            return
-        fi
-        echo "Claude Code already installed: $(claude --version 2>/dev/null || echo 'version unknown')"
-        return
-    fi
-
-    # In dry-run, report what would be done
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] Claude Code"
-        return
-    fi
+    require_not_installed claude "Claude Code" || return 0
 
     if is_macos; then
         brew install --cask claude-code
     else
-        # Use official install script
-        echo "Installing Claude Code via official script..."
+        # SECURITY NOTE: This uses curl|bash which is the official Claude Code install method.
+        # The script is from the official Claude website: https://claude.ai
         curl -fsSL https://claude.ai/install.sh | bash
     fi
 
-    echo "Claude Code installed! Run 'claude' to start."
+    status_success "Claude Code"
 }
 
 # ============================================================
 # Neovim + LazyVim
 # ============================================================
 install_neovim_lazyvim() {
-    echo ""
-    echo "=== Installing Neovim + LazyVim ==="
-    echo ""
+    print_section "Installing Neovim + LazyVim"
 
     # Check if LazyVim is already installed
     if [[ -f ~/.config/nvim/.lazyvim ]]; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] LazyVim (already installed)"
-            return
-        fi
-        echo "LazyVim already installed"
+        status_skip "LazyVim" "already installed"
         return
     fi
 
@@ -365,61 +202,57 @@ install_neovim_lazyvim() {
             # Get latest Neovim from GitHub releases for newer version
             local nvim_version
             nvim_version=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | sed -n 's/.*"tag_name": "\([^"]*\)".*/\1/p' | head -1)
-            cd /tmp
-            curl -fsSL "https://github.com/neovim/neovim/releases/download/${nvim_version}/nvim-linux-x86_64.tar.gz" -o nvim.tar.gz
-            sudo tar -xzf nvim.tar.gz -C /opt
-            sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
-            rm nvim.tar.gz
-            cd - > /dev/null
+            (
+                cd /tmp || exit 1
+                curl -fsSL "https://github.com/neovim/neovim/releases/download/${nvim_version}/nvim-linux-x86_64.tar.gz" -o nvim.tar.gz
+                sudo tar -xzf nvim.tar.gz -C /opt
+                sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+                rm nvim.tar.gz
+            )
         elif is_arch; then
             sudo pacman -S --noconfirm --needed neovim
         fi
-    else
-        echo "Neovim already installed: $(nvim --version | head -1)"
     fi
 
     # Install LazyVim dependencies
-    echo "Installing LazyVim dependencies..."
     if is_macos; then
         brew install lazygit fd ripgrep
     elif is_debian; then
         sudo apt install -y fd-find ripgrep
-        # lazygit installed separately in CLI tools
     elif is_arch; then
         sudo pacman -S --noconfirm --needed lazygit fd ripgrep
     fi
 
-    # Install LazyVim config
+    # Backup existing Neovim config if not LazyVim
     if [[ -d ~/.config/nvim && ! -f ~/.config/nvim/.lazyvim ]]; then
-        echo "Existing Neovim config found. Backing up to ~/.config/nvim.bak"
+        echo "Backing up existing Neovim config to ~/.config/nvim.bak"
         mv ~/.config/nvim ~/.config/nvim.bak
     fi
 
+    # Install LazyVim starter config
     if [[ ! -d ~/.config/nvim ]]; then
-        echo "Installing LazyVim starter..."
         git clone https://github.com/LazyVim/starter ~/.config/nvim
         rm -rf ~/.config/nvim/.git
         touch ~/.config/nvim/.lazyvim
-        echo "LazyVim installed! Run 'nvim' and wait for plugins to install."
-    else
-        echo "LazyVim already installed"
     fi
+
+    status_success "Neovim + LazyVim"
 }
 
 # ============================================================
 # Install all dev editors
 # ============================================================
 install_all_editors() {
-    install_vscode
-    install_cursor
-    install_zed
-    install_antigravity
-    install_gemini_cli
-    install_codex
-    install_claude_code
-    install_neovim_lazyvim
+    try_install install_vscode "VS Code"
+    try_install install_cursor "Cursor"
+    try_install install_zed "Zed"
+    try_install install_antigravity "Antigravity"
+    try_install install_gemini_cli "Gemini CLI"
+    try_install install_codex "Codex"
+    try_install install_claude_code "Claude Code"
+    try_install install_neovim_lazyvim "LazyVim"
 
     echo ""
-    echo "=== All dev editors installed! ==="
+    echo "=== Dev editors section complete ==="
     echo ""
 }

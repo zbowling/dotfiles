@@ -6,10 +6,14 @@ install_runtimes() {
     echo "=== Installing Runtimes ==="
     echo ""
 
-    install_mise
-    install_uv
-    install_nvm
-    install_rustup
+    try_install install_mise "mise"
+    try_install install_uv "uv"
+    try_install install_bun "bun"
+    try_install install_nvm "nvm"
+    try_install install_rustup "rustup"
+
+    # Make freshly installed tools available for later installs
+    refresh_path
 
     echo ""
     echo "Runtimes installed!"
@@ -67,6 +71,36 @@ install_uv() {
     echo "uv installed."
 }
 
+install_bun() {
+    echo ""
+    echo "--- Installing bun (fast JavaScript runtime) ---"
+
+    if command -v bun &> /dev/null || [[ -x "$HOME/.bun/bin/bun" ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
+            echo "[SKIP] bun (already installed)"
+            return
+        fi
+        local bun_path="${HOME}/.bun/bin/bun"
+        [[ -x "$bun_path" ]] || bun_path="$(command -v bun)"
+        echo "bun already installed: $("$bun_path" --version 2>/dev/null || echo 'version unknown')"
+        return
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        echo "[WOULD INSTALL] bun"
+        return
+    fi
+
+    # SECURITY NOTE: This uses curl|bash which is the official bun install method.
+    # The script is from the official bun website: https://bun.sh
+    curl -fsSL https://bun.sh/install | bash
+
+    # Add to PATH for current session
+    export PATH="$HOME/.bun/bin:$PATH"
+
+    echo "bun installed."
+}
+
 install_nvm() {
     echo ""
     echo "--- Installing nvm (Node version manager) ---"
@@ -85,9 +119,17 @@ install_nvm() {
         return
     fi
 
-    # Use nvm's official install script (it handles version detection)
-    # Fallback to known stable version if API fails
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    # Fetch latest nvm version from GitHub API, fallback to known stable if API fails
+    # SECURITY NOTE: This uses curl|bash which is the official nvm install method.
+    # The script is from the official nvm repository: https://github.com/nvm-sh/nvm
+    local nvm_version
+    nvm_version=$(curl -s https://api.github.com/repos/nvm-sh/nvm/releases/latest 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    if [[ -z "$nvm_version" ]]; then
+        nvm_version="v0.40.3"  # Fallback to known stable version
+        echo "  Note: Could not fetch latest nvm version, using $nvm_version"
+    fi
+    echo "  Installing nvm $nvm_version..."
+    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh" | bash
 
     echo "nvm installed."
     echo "Run 'nvm install --lts' to install Node.js LTS"

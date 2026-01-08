@@ -119,6 +119,8 @@ install_bun() {
             fi
         fi
 
+        # SECURITY NOTE: This uses curl|bash which is the official Bun install method.
+        # The script is from the official Bun website: https://bun.sh
         curl -fsSL https://bun.sh/install | bash
     fi
 

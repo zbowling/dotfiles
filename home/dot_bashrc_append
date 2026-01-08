@@ -1,0 +1,25 @@
+
+# ----- Dotfiles Configuration (XDG Base Directory) -----
+# Managed by ~/projects/dotfiles
+#
+# Modular configuration structure:
+#   - Configs live in ${XDG_CONFIG_HOME:-$HOME/.config}/bash/rc.d/
+#   - Numbered files load in order (00-path.bash, 10-history.bash, etc.)
+#   - Add custom modules with descriptive names
+#   - Use ~/.bashrc.local for machine-specific, untracked customizations
+#
+# Using chezmoi? Add new modules with 'chezmoi add' to sync across machines
+
+# Set XDG_CONFIG_HOME if not already set
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+# Source all modular configs from rc.d/
+if [[ -d "$XDG_CONFIG_HOME/bash/rc.d" ]]; then
+  for config_file in "$XDG_CONFIG_HOME"/bash/rc.d/*.bash; do
+    [[ -r "$config_file" ]] && source "$config_file"
+  done
+  unset config_file
+fi
+
+# Source local overrides (machine-specific, not in dotfiles)
+[[ -f ~/.bashrc.local ]] && source ~/.bashrc.local

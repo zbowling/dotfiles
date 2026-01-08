@@ -2,9 +2,23 @@
 # Cross-platform package installer
 # Usage: ./install-packages.sh [--cli] [--dev] [--runtimes] [--apps] [--all] [--extra]
 
-set -e
+# Don't exit on error - we'll track failures and report at end
+set +e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Track installation failures
+declare -a INSTALL_FAILURES=()
+
+# Wrapper to run install functions and track failures
+try_install() {
+    local func="$1"
+    local name="${2:-$func}"
+
+    if ! "$func"; then
+        INSTALL_FAILURES+=("$name")
+    fi
+}
 
 # Source sudo helper first
 source "$SCRIPT_DIR/lib/sudo-helper.sh"
@@ -14,6 +28,7 @@ check_not_root
 
 # Source library scripts (detect-os will set up package manager)
 source "$SCRIPT_DIR/lib/detect-os.sh"
+source "$SCRIPT_DIR/lib/common.sh"
 source "$SCRIPT_DIR/lib/packages-cli.sh"
 source "$SCRIPT_DIR/lib/packages-dev.sh"
 source "$SCRIPT_DIR/lib/install-runtimes.sh"
@@ -194,6 +209,9 @@ done
 if [[ "$SHOW_HELP" == true ]]; then
     echo "Usage: $0 [OPTIONS]"
     echo ""
+    echo "For guided interactive setup, run:"
+    echo "  ./install.sh -i"
+    echo ""
     echo "Categories:"
     echo "  --cli         Install CLI tools (eza, fzf, zoxide, bat, git, gh, etc.)"
     echo "  --dev         Install dev tools (cmake, gcc, clang, llvm, etc.)"
@@ -317,117 +335,132 @@ fi
 
 # Install selected categories
 if [[ "$INSTALL_CLI" == true ]]; then
-    install_cli_packages
+    try_install install_cli_packages "CLI tools"
 fi
 
 if [[ "$INSTALL_DEV" == true ]]; then
-    install_dev_packages
+    try_install install_dev_packages "Dev tools"
 fi
 
 if [[ "$INSTALL_RUNTIMES" == true ]]; then
-    install_runtimes
+    try_install install_runtimes "Runtimes"
 fi
 
 if [[ "$INSTALL_APPS" == true ]]; then
-    install_all_apps
+    try_install install_all_apps "Desktop apps"
 fi
 
 if [[ "$INSTALL_DEV_EDITOR" == true ]]; then
-    install_all_editors
+    try_install install_all_editors "Dev editors"
 fi
 
 if [[ "$INSTALL_1PASSWORD" == true ]]; then
-    install_1password
+    try_install install_1password "1Password"
 fi
 
 # macOS defaults
 if [[ "$MACOS_DEFAULTS" == true ]]; then
-    configure_macos_defaults
+    try_install configure_macos_defaults "macOS defaults"
 fi
 
 # Individual apps
 if [[ "$INSTALL_CHROME" == true ]]; then
-    install_chrome
+    try_install install_chrome "Chrome"
 fi
 
 if [[ "$INSTALL_GHOSTTY" == true ]]; then
-    install_ghostty
+    try_install install_ghostty "Ghostty"
 fi
 
 if [[ "$INSTALL_ALACRITTY" == true ]]; then
-    install_alacritty
+    try_install install_alacritty "Alacritty"
 fi
 
 if [[ "$INSTALL_DISCORD" == true ]]; then
-    install_discord
+    try_install install_discord "Discord"
 fi
 
 if [[ "$INSTALL_SPOTIFY" == true ]]; then
-    install_spotify
+    try_install install_spotify "Spotify"
 fi
 
 if [[ "$INSTALL_SIGNAL" == true ]]; then
-    install_signal
+    try_install install_signal "Signal"
 fi
 
 if [[ "$INSTALL_OLLAMA" == true ]]; then
-    install_ollama
+    try_install install_ollama "Ollama"
 fi
 
 if [[ "$INSTALL_TAILSCALE" == true ]]; then
-    install_tailscale
+    try_install install_tailscale "Tailscale"
 fi
 
 if [[ "$INSTALL_ZOOM" == true ]]; then
-    install_zoom
+    try_install install_zoom "Zoom"
 fi
 
 if [[ "$INSTALL_STEAM" == true ]]; then
-    install_steam
+    try_install install_steam "Steam"
 fi
 
 if [[ "$INSTALL_DOCKER" == true ]]; then
-    install_docker
+    try_install install_docker "Docker"
 fi
 
 if [[ "$INSTALL_FONTS" == true ]]; then
-    install_fonts
+    try_install install_fonts "Nerd Fonts"
 fi
 
 # Individual editors
 if [[ "$INSTALL_VSCODE" == true ]]; then
-    install_vscode
+    try_install install_vscode "VS Code"
 fi
 
 if [[ "$INSTALL_CURSOR" == true ]]; then
-    install_cursor
+    try_install install_cursor "Cursor"
 fi
 
 if [[ "$INSTALL_ZED" == true ]]; then
-    install_zed
+    try_install install_zed "Zed"
 fi
 
 if [[ "$INSTALL_ANTIGRAVITY" == true ]]; then
-    install_antigravity
+    try_install install_antigravity "Antigravity"
 fi
 
 if [[ "$INSTALL_GEMINI_CLI" == true ]]; then
-    install_gemini_cli
+    try_install install_gemini_cli "Gemini CLI"
 fi
 
 if [[ "$INSTALL_CODEX" == true ]]; then
-    install_codex
+    try_install install_codex "Codex"
 fi
 
 if [[ "$INSTALL_CLAUDE_CODE" == true ]]; then
-    install_claude_code
+    try_install install_claude_code "Claude Code"
 fi
 
 if [[ "$INSTALL_LAZYVIM" == true ]]; then
-    install_neovim_lazyvim
+    try_install install_neovim_lazyvim "LazyVim"
 fi
 
 echo ""
 echo "========================================"
-echo "Installation complete!"
-echo "========================================"
+if [[ ${#INSTALL_FAILURES[@]} -eq 0 ]]; then
+    echo "Installation complete!"
+    echo "========================================"
+    exit 0
+else
+    echo "Installation complete with errors"
+    echo "========================================"
+    echo ""
+    echo "The following packages failed to install:"
+    for failure in "${INSTALL_FAILURES[@]}"; do
+        echo "  ✗ $failure"
+    done
+    echo ""
+    echo "Re-run with individual flags to retry, or check dependencies."
+    echo "========================================"
+    exit 1
+fi

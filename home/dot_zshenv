@@ -1,0 +1,12 @@
+# ~/.zshenv - Bootstrap file for zsh
+# This is the ONLY zsh config file that must remain in $HOME
+# It sets ZDOTDIR to use XDG Base Directory specification
+
+# Set XDG_CONFIG_HOME if not already set
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+# Set ZDOTDIR to move zsh configs to XDG_CONFIG_HOME
+export ZDOTDIR="$XDG_CONFIG_HOME/zsh"
+
+# Source the real .zshenv from ZDOTDIR
+[[ -f "$ZDOTDIR/.zshenv" ]] && source "$ZDOTDIR/.zshenv"

@@ -44,11 +44,11 @@ install_cli_packages() {
         pkg_install gh
         pkg_install git-delta
         # lazygit and lazydocker need special handling on Debian
-        install_lazygit_debian
-        install_lazydocker_debian
-        install_atuin_debian
-        install_gum_debian
-        install_tldr_debian
+        try_install install_lazygit_debian "lazygit"
+        try_install install_lazydocker_debian "lazydocker"
+        try_install install_atuin_debian "atuin"
+        try_install install_gum_debian "gum"
+        try_install install_tldr_debian "tldr"
     elif is_arch; then
         pkg_install fd
         pkg_install github-cli
@@ -70,127 +70,67 @@ install_cli_packages() {
 }
 
 install_lazygit_debian() {
-    if command -v lazygit &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] lazygit (already installed)"
-            return
-        fi
-        echo "lazygit already installed"
-        return
-    fi
+    require_not_installed lazygit "lazygit" || return 0
 
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] lazygit"
-        return
-    fi
-
-    echo "Installing lazygit..."
-    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | sed -n 's/.*"tag_name": "v\([^"]*\)".*/\1/p' | head -1)
-    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+    # Fetch latest version from GitHub API
+    local version
+    version=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | sed -n 's/.*"tag_name": "v\([^"]*\)".*/\1/p' | head -1)
+    curl -Lo /tmp/lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/latest/download/lazygit_${version}_Linux_x86_64.tar.gz"
     tar xf /tmp/lazygit.tar.gz -C /tmp lazygit
     sudo install /tmp/lazygit /usr/local/bin
     rm /tmp/lazygit.tar.gz /tmp/lazygit
 }
 
 install_lazydocker_debian() {
-    if command -v lazydocker &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] lazydocker (already installed)"
-            return
-        fi
-        echo "lazydocker already installed"
-        return
-    fi
+    require_not_installed lazydocker "lazydocker" || return 0
 
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] lazydocker"
-        return
-    fi
-
-    echo "Installing lazydocker..."
+    # SECURITY NOTE: This uses curl|bash which is the official lazydocker install method.
+    # The script is from the official lazydocker repo: https://github.com/jesseduffield/lazydocker
     curl https://raw.githubusercontent.com/jesseduffield/lazydocker/master/scripts/install_update_linux.sh | bash
 }
 
 install_atuin_debian() {
-    if command -v atuin &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] atuin (already installed)"
-            return
-        fi
-        echo "atuin already installed"
-        return
-    fi
+    require_not_installed atuin "atuin" || return 0
 
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] atuin"
-        return
-    fi
-
-    echo "Installing atuin..."
+    # SECURITY NOTE: This uses curl|sh which is the official atuin install method.
+    # The script is from the official atuin website: https://atuin.sh
     curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 }
 
 install_gum_debian() {
-    if command -v gum &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] gum (already installed)"
-            return
-        fi
-        echo "gum already installed"
-        return
-    fi
+    require_not_installed gum "gum" || return 0
 
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] gum"
-        return
-    fi
-
-    echo "Installing gum..."
-    # Add Charm repository
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-    sudo apt update
+    setup_apt_repo "Charm" \
+        "https://repo.charm.sh/apt/gpg.key" \
+        "/etc/apt/keyrings/charm.gpg" \
+        "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" \
+        "/etc/apt/sources.list.d/charm.list"
     sudo apt install -y gum
 }
 
 install_tldr_debian() {
-    if command -v tldr &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] tldr (already installed)"
-            return
-        fi
-        echo "tldr already installed"
-        return
-    fi
+    require_not_installed tldr "tldr" || return 0
 
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] tldr"
-        return
-    fi
-
-    echo "Installing tldr (tealdeer)..."
     # Install tealdeer (Rust implementation) via cargo or binary
     if command -v cargo &> /dev/null; then
         cargo install tealdeer
     else
         # Download pre-built binary
-        local arch
+        local arch url
         arch=$(uname -m)
-        local url
         if [[ "$arch" == "x86_64" ]]; then
             url="https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-x86_64-musl"
         elif [[ "$arch" == "aarch64" ]]; then
             url="https://github.com/tealdeer-rs/tealdeer/releases/latest/download/tealdeer-linux-arm-musleabi"
         else
             echo "Unsupported architecture for tldr: $arch"
-            return
+            return 1
         fi
         curl -fsSL "$url" -o /tmp/tldr
         sudo install -m 755 /tmp/tldr /usr/local/bin/tldr
         rm /tmp/tldr
     fi
-    echo "tldr installed! Run 'tldr --update' to download pages."
+    echo "  Run 'tldr --update' to download pages."
 }
 
 # 1Password desktop app and CLI
@@ -294,8 +234,8 @@ install_1password_debian() {
         return
     fi
 
-    # Add 1Password apt repository if not present
-    if [[ ! -f /etc/apt/sources.list.d/1password.list ]]; then
+    # Add 1Password apt repository if not present (check both .list and .sources formats)
+    if [[ ! -f /etc/apt/sources.list.d/1password.list ]] && [[ ! -f /etc/apt/sources.list.d/1password.sources ]]; then
         echo "Adding 1Password apt repository..."
 
         # Add signing key (use --yes to overwrite if exists)

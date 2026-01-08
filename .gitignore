@@ -8,3 +8,7 @@
 
 # Local overrides (not tracked)
 *.local
+
+# Zsh completion dump files
+.zcompdump*
+config/zsh/.zcompdump*

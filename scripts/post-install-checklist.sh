@@ -149,14 +149,14 @@ if command -v nvim &> /dev/null; then
 fi
 
 # ============================================================
-# Antidote (zsh plugins)
+# Antidote (zsh plugins) - auto-installs on first zsh run
 # ============================================================
 echo "## Zsh Plugins"
 echo ""
 if [[ -d ~/.antidote ]]; then
-    echo "- [x] Antidote installed"
+    echo "- [x] Antidote installed (auto-installed on first zsh run)"
 else
-    echo "- [ ] Install Antidote: git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote"
+    echo "- [ ] Antidote will auto-install when you start zsh"
 fi
 echo ""
 

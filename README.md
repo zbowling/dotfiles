@@ -33,7 +33,7 @@ Two approaches available to use this:
 git clone https://github.com/zbowling/dotfiles.git ~/projects/dotfiles
 cd ~/projects/dotfiles
 
-# Create symlinks
+# Create symlinks (XDG-compliant: configs go to ~/.config/)
 ./install.sh
 
 # Option A: Interactive setup wizard (recommended)
@@ -44,11 +44,9 @@ cd ~/projects/dotfiles
 ./scripts/install-packages.sh --init-git   # Git user + GitHub auth
 ./scripts/install-packages.sh --extra      # Everything including dev editors
 
-# Install Antidote (zsh plugin manager)
-git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
-
-# Set zsh as default
+# Set zsh as default and open new shell
 chsh -s $(which zsh)
+exec zsh  # Antidote auto-installs on first run
 
 # See what else needs doing
 ./scripts/post-install-checklist.sh
@@ -185,51 +183,52 @@ Configures macOS system preferences:
 
 ## Structure
 
+Uses XDG Base Directory specification (`~/.config/`) for all shell configs:
+
 ```
 dotfiles/
-├── zsh/
-│   ├── .zshrc              # Main zsh config
-│   └── .zsh_plugins.txt    # Antidote plugin list
-├── fish/
-│   └── config.fish         # Fish shell config
-├── bash/
-│   └── .bashrc.local       # Bash overrides
+├── config/                    # XDG Base Directory configs (→ ~/.config/)
+│   ├── zsh/
+│   │   ├── .zshrc            # Main zsh config
+│   │   ├── .zshenv           # Environment (all sessions)
+│   │   ├── .zsh_plugins.txt  # Antidote plugin list
+│   │   └── rc.d/             # Modular configs (00-99 numbering)
+│   │       ├── 00-path.zsh
+│   │       ├── 20-plugins.zsh    # Auto-installs antidote
+│   │       ├── 40-aliases.zsh
+│   │       └── ...
+│   ├── bash/
+│   │   └── rc.d/             # Modular configs (sourced from ~/.bashrc)
+│   └── fish/
+│       ├── config.fish       # Main config
+│       └── conf.d/           # Auto-loaded modules
+├── home/                      # Bootstrap files for ~/
+│   ├── dot_zshenv            # Sets ZDOTDIR → ~/.config/zsh
+│   └── dot_bashrc_append     # Appended to ~/.bashrc
 ├── starship/
-│   └── starship.toml       # Prompt config (ASCII-safe)
+│   └── starship.toml         # Prompt config (ASCII-safe)
 ├── ghostty/
-│   └── config              # Ghostty terminal config
-├── alacritty/              # Alacritty terminal config (ristretto theme)
+│   └── config                # Ghostty terminal config
+├── alacritty/                # Alacritty terminal config (ristretto theme)
 ├── zellij/
-│   ├── config.kdl          # Zellij multiplexer config
-│   └── themes/             # Zellij themes (ristretto)
+│   ├── config.kdl            # Zellij multiplexer config
+│   └── themes/               # Zellij themes (ristretto)
 ├── ssh/
-│   └── config              # SSH config (1Password agent)
+│   └── config                # SSH config (1Password agent)
 ├── scripts/
-│   ├── install-packages.sh    # Cross-platform package installer
-│   ├── setup-wizard.sh        # Interactive setup wizard (gum TUI)
-│   ├── post-install-checklist.sh # Generate checklist
-│   ├── chezmoi-bootstrap.sh   # Chezmoi setup helper
+│   ├── install-packages.sh   # Cross-platform package installer
+│   ├── setup-wizard.sh       # Interactive setup wizard (gum TUI)
+│   ├── post-install-checklist.sh
 │   └── lib/
-│       ├── detect-os.sh       # OS detection helpers
-│       ├── sudo-helper.sh     # Sudo credential caching
-│       ├── packages-cli.sh    # CLI tools + 1Password
-│       ├── packages-dev.sh    # Dev tools + Bun
-│       ├── packages-apps.sh   # Desktop apps
-│       ├── packages-editors.sh # Dev editors
-│       ├── git-config.sh      # Git configuration + delta
-│       ├── ssh-setup.sh       # SSH key generation
-│       ├── macos-defaults.sh  # macOS system preferences
+│       ├── common.sh         # DRY helpers for all scripts
+│       ├── detect-os.sh      # OS detection helpers
+│       ├── packages-*.sh     # Package installers by category
 │       └── install-runtimes.sh
-├── chezmoi/                # Chezmoi templates (optional)
-│   ├── .chezmoiscripts/    # Run-once installation scripts
-│   ├── .chezmoidata.toml   # Default configuration
-│   └── .chezmoiignore      # Files to skip
-├── tests/                  # Docker-based integration tests
-├── install.sh              # Symlink installer
-├── AGENTS.md               # AI assistant instructions
-├── CHEZMOI.md              # Chezmoi integration guide
-├── TAILSCALE.md            # Tailscale setup guide
-└── LICENSE                 # BSD 2-Clause
+├── chezmoi/                  # Chezmoi templates (optional)
+├── tests/                    # Docker-based integration tests
+├── install.sh                # Symlink installer (-i for interactive)
+├── AGENTS.md                 # AI assistant instructions
+└── CHEZMOI.md                # Chezmoi integration guide
 ```
 
 ## 1Password Integration

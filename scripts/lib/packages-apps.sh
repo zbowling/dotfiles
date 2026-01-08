@@ -6,29 +6,14 @@
 # Google Chrome
 # ============================================================
 install_chrome() {
-    echo ""
-    echo "=== Installing Google Chrome ==="
-    echo ""
+    print_section "Installing Google Chrome"
 
-    # Check if already installed
-    local installed=false
-    if is_macos && [[ -d "/Applications/Google Chrome.app" ]]; then
-        installed=true
-    elif (is_debian || is_arch) && command -v google-chrome &> /dev/null; then
-        installed=true
-    elif is_arch && command -v google-chrome-stable &> /dev/null; then
-        installed=true
-    fi
-
-    if [[ "$installed" == true ]]; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Chrome (already installed)"
-            return
-        fi
-        echo "Google Chrome already installed"
+    # Check if already installed (handles both command and macOS app)
+    require_app_not_installed "Google Chrome" "Chrome" || return 0
+    if command -v google-chrome &> /dev/null || command -v google-chrome-stable &> /dev/null; then
+        status_skip "Chrome" "already installed"
         return
     fi
-
     if [[ "$DRY_RUN" == true ]]; then
         echo "[WOULD INSTALL] Chrome"
         return
@@ -38,62 +23,41 @@ install_chrome() {
         brew install --cask google-chrome
     elif is_debian; then
         echo "Downloading Google Chrome..."
-        (
-            cd /tmp || exit 1
-            wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O chrome.deb
-            sudo apt install -y ./chrome.deb
-            rm chrome.deb
-        )
+        download_file "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" "/tmp/chrome.deb"
+        sudo apt install -y /tmp/chrome.deb
+        rm -f /tmp/chrome.deb
     elif is_arch; then
-        if [[ "$PKG_MANAGER" == "paru" ]]; then
-            paru -S --noconfirm --needed google-chrome
-        elif [[ "$PKG_MANAGER" == "yay" ]]; then
-            yay -S --noconfirm --needed google-chrome
-        else
-            echo "Google Chrome requires an AUR helper (paru or yay)"
-        fi
+        aur_install google-chrome
     fi
+
+    status_success "Chrome"
 }
 
 # ============================================================
 # Ghostty Terminal
 # ============================================================
 install_ghostty() {
-    echo ""
-    echo "=== Installing Ghostty ==="
-    echo ""
+    print_section "Installing Ghostty"
 
-    # Check if already installed
-    if (is_macos && [[ -d "/Applications/Ghostty.app" ]]) || command -v ghostty &> /dev/null; then
-        if [[ "$DRY_RUN" == true ]]; then
-            echo "[SKIP] Ghostty (already installed)"
-            return
-        fi
-        echo "Ghostty already installed"
-        return
-    fi
-
-    if [[ "$DRY_RUN" == true ]]; then
-        echo "[WOULD INSTALL] Ghostty"
-        return
-    fi
+    require_app_not_installed "Ghostty" "Ghostty" || return 0
+    require_not_installed ghostty "Ghostty" || return 0
 
     if is_macos; then
         brew install --cask ghostty
     elif is_debian; then
-        # Ghostty on Ubuntu/Debian - try snap first, then build from source
         if command -v snap &> /dev/null; then
-            echo "Installing Ghostty via snap..."
             sudo snap install ghostty --classic
         else
             echo "Ghostty not available via apt. Options:"
-            echo "  1. Install snap and run: sudo snap install ghostty --classic"
+            echo "  1. Install snap: sudo snap install ghostty --classic"
             echo "  2. Build from source: https://ghostty.org/docs/install/build"
+            return 1
         fi
     elif is_arch; then
-        # Ghostty is in community repo on Arch
         sudo pacman -S --noconfirm --needed ghostty
     fi
+
+    status_success "Ghostty"
 }
 
 # ============================================================
@@ -365,8 +329,8 @@ install_spotify() {
     if is_macos; then
         brew install --cask spotify
     elif is_debian; then
-        # Add Spotify apt repository
-        if [[ ! -f /etc/apt/sources.list.d/spotify.list ]]; then
+        # Add Spotify apt repository (check both .list and .sources formats)
+        if [[ ! -f /etc/apt/sources.list.d/spotify.list ]] && [[ ! -f /etc/apt/sources.list.d/spotify.sources ]]; then
             echo "Adding Spotify apt repository..."
             curl -sS https://download.spotify.com/debian/pubkey_C85668DF69375001.gpg | \
                 sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/spotify.gpg
@@ -468,8 +432,8 @@ install_docker() {
     fi
 
     if is_debian; then
-        # Add Docker apt repository
-        if [[ ! -f /etc/apt/sources.list.d/docker.list ]]; then
+        # Add Docker apt repository (check both .list and .sources formats)
+        if [[ ! -f /etc/apt/sources.list.d/docker.list ]] && [[ ! -f /etc/apt/sources.list.d/docker.sources ]]; then
             echo "Adding Docker apt repository..."
             sudo install -m 0755 -d /etc/apt/keyrings
             sudo wget -qO /etc/apt/keyrings/docker.asc https://download.docker.com/linux/ubuntu/gpg
@@ -586,19 +550,19 @@ install_fonts() {
 # Install all desktop apps
 # ============================================================
 install_all_apps() {
-    install_chrome
-    install_ghostty
-    install_alacritty
-    install_discord
-    install_spotify
-    install_signal
-    install_ollama
-    install_zoom
-    install_steam
+    try_install install_chrome "Chrome"
+    try_install install_ghostty "Ghostty"
+    try_install install_alacritty "Alacritty"
+    try_install install_discord "Discord"
+    try_install install_spotify "Spotify"
+    try_install install_signal "Signal"
+    try_install install_ollama "Ollama"
+    try_install install_zoom "Zoom"
+    try_install install_steam "Steam"
     # Note: Docker, Fonts, Tailscale, 1Password are optional
 
     echo ""
-    echo "=== All desktop apps installed! ==="
+    echo "=== Desktop apps section complete ==="
     echo ""
     echo "Optional extras (not included in --apps):"
     echo "  --docker     Docker engine"
