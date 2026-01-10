@@ -8,7 +8,7 @@ install_runtimes() {
 
     try_install install_mise "mise"
     try_install install_uv "uv"
-    try_install install_bun "bun"
+    try_install _install_bun_runtime "bun"
     try_install install_nvm "nvm"
     try_install install_rustup "rustup"
 
@@ -71,7 +71,7 @@ install_uv() {
     echo "uv installed."
 }
 
-install_bun() {
+_install_bun_runtime() {
     echo ""
     echo "--- Installing bun (fast JavaScript runtime) ---"
 
