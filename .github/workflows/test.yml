@@ -71,8 +71,9 @@ jobs:
           }
 
           failed=0
-          check_symlink ~/.zshrc || failed=1
-          check_symlink ~/.zsh_plugins.txt || failed=1
+          # XDG-compliant zsh setup: ~/.zshenv bootstraps ZDOTDIR to ~/.config/zsh
+          check_symlink ~/.zshenv || failed=1
+          check_symlink ~/.config/zsh || failed=1
           check_symlink ~/.config/starship.toml || failed=1
           check_symlink ~/.config/fish/config.fish || failed=1
           check_symlink ~/.config/ghostty/config || failed=1
@@ -227,8 +228,8 @@ jobs:
           # Install antidote first
           git clone --depth=1 https://github.com/mattmc3/antidote.git ~/.antidote
 
-          # Test zsh config syntax
-          zsh -n ~/.zshrc && echo "✓ zsh config syntax valid"
+          # Test zsh config syntax (XDG path via ZDOTDIR)
+          zsh -n ~/.config/zsh/.zshrc && echo "✓ zsh config syntax valid"
 
       - name: Test Fish Config Syntax
         run: |
